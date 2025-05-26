@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { DatabaseService } from '../../database/database.service';
+import { AddNewUserDto } from './user.dto';
 
 @Injectable()
 export class UserService {
@@ -33,5 +34,12 @@ export class UserService {
     });
 
     return user;
+  }
+
+  public async addNewUser(newUser: AddNewUserDto): Promise<boolean> {
+    await this.databaseService.user.create({
+      data: newUser,
+    });
+    return true;
   }
 }
