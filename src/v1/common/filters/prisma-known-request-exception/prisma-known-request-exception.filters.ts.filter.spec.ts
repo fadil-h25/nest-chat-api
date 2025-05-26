@@ -1,4 +1,4 @@
-import { PrismaKnownRequestExceptionFilter } from './prisma-known-request-exception.filters.ts.filter';
+import { PrismaKnownRequestExceptionFilter } from './prisma-known-request-exception.filters';
 
 describe('PrismaKnownRequestExceptionFiltersTsFilter', () => {
   it('should be defined', () => {
