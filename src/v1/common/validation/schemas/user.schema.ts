@@ -21,3 +21,5 @@ export const addNewUserSchema = z.object({
   password: validationUserEmail,
   phone: validationUserPhone,
 });
+
+export type AddNewUserDto = z.infer<typeof addNewUserSchema>;
