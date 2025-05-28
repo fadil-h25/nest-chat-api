@@ -15,11 +15,11 @@ export const validationUserPassword = z
   .min(8, 'password must have at least 8 character')
   .max(50, 'password can only have a maximum of 50 characters');
 
-export const addNewUserSchema = z.object({
+export const AddNewUserSchema = z.object({
   name: validationUserName,
   email: validationUserEmail,
   password: validationUserEmail,
   phone: validationUserPhone,
 });
 
-export type AddNewUserDto = z.infer<typeof addNewUserSchema>;
+export type AddNewUserDto = z.infer<typeof AddNewUserSchema>;
