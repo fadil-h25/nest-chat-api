@@ -7,12 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id Int @id @default(autoincrement())
-  name String @db.VarChar(100) 
-  email String @db.VarChar(100) @unique
-  phone String @db.VarChar(20) @unique
-  password String @db.VarChar(50)
+model User {
+  id             Int               @id @default(autoincrement())
+  name           String            @db.VarChar(100)
+  email          String            @db.VarChar(100) @unique
+  phone          String            @db.VarChar(20) @unique
+  password       String            @db.VarChar(120)
+  contactOwner   Contact[]         @relation("contactOwnerId")
+  contactTarget  Contact[]         @relation("contactTargetId")
+  relationMember RelationMember[]
+  message        Message[]
 
   @@map("users")
+}
+
+enum RelationType {
+  PRIVATE
+  GROUP
+}
+
+model Contact {
+  id                 Int    @id @default(autoincrement())
+  targetId           Int    @map("target_id")
+  name               String @db.VarChar(50)
+  ownerId            Int    @map("owner_id")
+  relationId         Int    @map("relation_id")
+  lastMessageId      Int    @map("last_message_id")
+  totalUnreadMessage Int    @db.Int @default(0) @map("total_unread_message")
+
+  @@unique([targetId, ownerId])
+
+  owner  User @relation(name: "contactOwnerId", fields: [ownerId], references: [id])
+  target User @relation(name: "contactTargetId", fields: [targetId], references: [id])
+
+  @@map("contacts")
+}
+
+model Relation {
+  id             Int              @id @default(autoincrement())
+  type           RelationType     @default(PRIVATE)
+  relationMember RelationMember[]
+  message        Message[]
+
+  @@map("relations")
+}
+
+model RelationMember {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  relationId Int      @map("relation_id")
+
+  user     User     @relation(fields: [userId], references: [id])
+  relation Relation @relation(fields: [relationId], references: [id])
+
+  @@map("relation_members")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  ownerId   Int      @map("owner_id")
+  content   String   @db.LongText
+  relationId Int     @map("relation_id")
+  isRead    Int      @map("is_read")
+
+  createdAt DateTime @db.Timestamp(0) @default(now()) @map("create_at")
+  updatedAt DateTime @db.Timestamp(0) @updatedAt()     @map("update_at")
+
+  owner    User     @relation(fields: [ownerId], references: [id])
+  relation Relation @relation(fields: [relationId], references: [id])
+
+  @@map("messages")
 }
