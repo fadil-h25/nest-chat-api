@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { CommonModule } from './v1/common/common.module';
 import { AuthModule } from './v1/auth/auth.module';
 import { RelationModule } from './v1/relation/relation.module';
+import { RelationMemberModule } from './v1/relation_member/relation_member.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RelationModule } from './v1/relation/relation.module';
     CommonModule,
     AuthModule,
     RelationModule,
+    RelationMemberModule,
   ],
   controllers: [AppController],
   providers: [AppService],
