@@ -31,8 +31,8 @@ model Contact {
   targetId           Int    @map("target_id")
   name               String @db.VarChar(50)
   ownerId            Int    @map("owner_id")
-  relationId         Int    @map("relation_id")
-  lastMessageId      Int    @map("last_message_id")
+  relationId         Int?    @map("relation_id")
+  lastMessageId      Int?    @map("last_message_id")
   totalUnreadMessage Int    @db.Int @default(0) @map("total_unread_message")
 
   @@unique([targetId, ownerId])

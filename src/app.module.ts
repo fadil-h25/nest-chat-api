@@ -8,6 +8,7 @@ import { CommonModule } from './v1/common/common.module';
 import { AuthModule } from './v1/auth/auth.module';
 import { RelationModule } from './v1/relation/relation.module';
 import { RelationMemberModule } from './v1/relation_member/relation_member.module';
+import { ContactModule } from './v1/contact/contact.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RelationMemberModule } from './v1/relation_member/relation_member.modul
     AuthModule,
     RelationModule,
     RelationMemberModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],
