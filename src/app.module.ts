@@ -10,6 +10,7 @@ import { RelationModule } from './v1/relation/relation.module';
 import { RelationMemberModule } from './v1/relation_member/relation_member.module';
 import { ContactModule } from './v1/contact/contact.module';
 import { MessageModule } from './v1/message/message.module';
+import { ChatModule } from './v1/chat/chat.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MessageModule } from './v1/message/message.module';
     RelationMemberModule,
     ContactModule,
     MessageModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
