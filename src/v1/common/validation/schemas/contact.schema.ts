@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { validationUserId, validationUserName } from './user.schema';
+import {
+  validationUserId,
+  validationUserName,
+  validationUserPhone,
+} from './user.schema';
+import { validationRelationIdNullable } from './relation.schema';
 
 export const validationContactId = z.number().min(1, 'Contact id invalid');
 export const validationContactName = z
@@ -8,12 +13,12 @@ export const validationContactName = z
   .max(50, 'name can only have a maximum of 50 characters');
 
 export const AddNewContact = z.object({
-  targetId: validationUserId,
-  ownerId: validationUserId,
+  phone: validationUserPhone,
   name: validationUserName,
+  relationId: validationRelationIdNullable,
 });
 
-export type AddNewContactDto = z.infer<typeof AddNewContact>;
+export type AddNewContactReq = z.infer<typeof AddNewContact>;
 
 export const UpdateContactName = z.object({
   contactId: validationContactId,
@@ -31,13 +36,13 @@ export type UpdateContactRelationIdDto = z.infer<
   typeof UpdateContactRelationId
 >;
 
-export const UpdateContactLastMessageId = z.object({
-  contactId: z.number().min(1, 'Contact id invalid'),
+export const UpdateContactsLastMessageByRelationId = z.object({
+  relationId: z.number().min(1, 'Relation id invalid'),
   lastMessageId: z.number().min(1, 'Last message id invalid'),
 });
 
-export type UpdateContactLastMessageIdDto = z.infer<
-  typeof UpdateContactLastMessageId
+export type UpdateContactsLastMessageByRelationIdDto = z.infer<
+  typeof UpdateContactsLastMessageByRelationId
 >;
 
 export const UpdateContactUnreadCount = z.object({
@@ -50,3 +55,10 @@ export const UpdateContactUnreadCount = z.object({
 export type UpdateContactUnreadCountDto = z.infer<
   typeof UpdateContactUnreadCount
 >;
+
+export const GetContactPhoneByIdSchema = z.object({
+  id: validationContactId,
+  phone: validationUserPhone,
+});
+
+export type GetContactPhoneByIdReq = z.infer<typeof GetContactPhoneByIdSchema>;

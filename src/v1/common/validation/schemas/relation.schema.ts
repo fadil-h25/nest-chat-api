@@ -9,3 +9,9 @@ export const validationRelationType = z.enum([
 ]);
 
 export const validationRelationId = z.number().min(1, 'relation id invalid');
+
+export const validationRelationIdNullable = z
+  .number()
+  .min(1, 'relation id invalid')
+  .nullable()
+  .optional();

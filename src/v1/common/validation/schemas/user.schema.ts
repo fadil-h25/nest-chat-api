@@ -18,8 +18,8 @@ export const validationUserPassword = z
 export const AddNewUserSchema = z.object({
   name: validationUserName,
   email: validationUserEmail,
-  password: validationUserEmail,
+  password: validationUserPassword,
   phone: validationUserPhone,
 });
 
-export type AddNewUserDto = z.infer<typeof AddNewUserSchema>;
+export type AddNewUserRes = z.infer<typeof AddNewUserSchema>;

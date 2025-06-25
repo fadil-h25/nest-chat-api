@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { validationUserId } from './user.schema';
-import { validationRelationId } from './relation.schema';
+import {
+  validationRelationId,
+  validationRelationIdNullable,
+} from './relation.schema';
 
 const validationContentMessage = z
   .string()
@@ -9,7 +12,8 @@ const validationContentMessage = z
 export const AddNewMessage = z.object({
   ownerId: validationUserId,
   content: validationContentMessage,
-  relationId: validationRelationId,
+  relationId: validationRelationIdNullable,
+  targetId: validationUserId,
 });
 export type AddNewMessageDto = z.infer<typeof AddNewMessage>;
 
