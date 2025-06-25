@@ -1,3 +1,7 @@
-export interface SuccessRegisterDto {
+export interface RegisterRes {
+  message: string;
+}
+
+export interface LoginRes {
   message: string;
 }
