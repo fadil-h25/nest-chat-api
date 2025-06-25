@@ -1,54 +1,193 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from 'src/database/database.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { DatabaseService } from '../../database/database.service';
 import {
-  AddNewContactDto,
-  UpdateContactLastMessageIdDto,
+  AddNewContactReq,
   UpdateContactNameDto,
   UpdateContactRelationIdDto,
   UpdateContactUnreadCountDto,
   validationContactId,
 } from '../common/validation/schemas/contact.schema';
 
-import { RelationService } from '../relation/relation.service';
-import { RelationMemberService } from '../relation_member/relation_member.service';
-import { validationUserId } from '../common/validation/schemas/user.schema';
-import { Contact } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+import { Contact, Prisma } from '@prisma/client';
+import { GetContactRes } from './dto/contact-response.dto';
+import { UserService } from '../user/user.service';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { createLoggerMeta } from '../utils/logger/logger.util';
 
 @Injectable()
 export class ContactService {
   constructor(
     private databaseService: DatabaseService,
-    private relationService: RelationService,
-    private relationMemberService: RelationMemberService,
+    private userService: UserService,
+    private eventEmit: EventEmitter2,
+    @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
 
-  async getAllContacts(ownerId: number): Promise<Contact[] | []> {
-    ownerId = validationUserId.parse(ownerId);
+  async getContacts(ownerId: number): Promise<GetContactRes[] | []> {
+    this.logger.debug(
+      'getContacts called',
+      createLoggerMeta('contact', ContactService.name),
+    );
     const contacts = await this.databaseService.contact.findMany({
       where: {
         ownerId,
+      },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        targetId: true,
+        totalUnreadMessage: true,
+        relationId: true,
+        relation: {
+          select: {
+            lastMessage: {
+              select: {
+                content: true,
+              },
+            },
+          },
+        },
       },
     });
     return contacts;
   }
 
-  async deleteContact(contactId: number): Promise<void> {
+  async getAllContacts(): Promise<GetContactRes[] | []> {
+    this.logger.debug(
+      'getAllContacts called',
+      createLoggerMeta('contact', ContactService.name),
+    );
+    const contacts = await this.databaseService.contact.findMany({
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        targetId: true,
+        totalUnreadMessage: true,
+        relationId: true,
+        relation: {
+          select: {
+            lastMessage: {
+              select: {
+                content: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    return contacts;
+  }
+
+  async getContact(
+    contactId: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<GetContactRes> {
+    this.logger.debug(
+      'getContact called',
+      createLoggerMeta('contact', ContactService.name),
+    );
+    const db = tx ?? this.databaseService;
+
+    const contact = await db.contact.findUniqueOrThrow({
+      where: {
+        id: contactId,
+      },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        targetId: true,
+        totalUnreadMessage: true,
+        relationId: true,
+        relation: {
+          select: {
+            lastMessage: {
+              select: {
+                content: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // if (!contact) throw new NotFoundException('Contact not found');
+    return contact;
+  }
+
+  async deleteContact(
+    contactId: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const db = tx ?? this.databaseService;
+
     contactId = validationContactId.parse(contactId);
-    await this.databaseService.contact.delete({
+    await db.contact.delete({
       where: {
         id: contactId,
       },
     });
   }
 
-  async addNewContact(data: AddNewContactDto): Promise<void> {
-    await this.databaseService.contact.create({
-      data,
+  async addNewContact(
+    ownerId: number,
+    data: AddNewContactReq,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Contact> {
+    this.logger.debug(
+      'addNewContact called',
+      createLoggerMeta('contact', ContactService.name),
+    );
+    const db = tx ?? this.databaseService;
+    const targetUser = await this.userService.getUserByPhone(data.phone);
+
+    const contact = await db.contact.create({
+      data: {
+        ownerId: ownerId,
+        name: data.name,
+        targetId: targetUser.id,
+      },
     });
+
+    return contact;
   }
 
-  async updateContactName(data: UpdateContactNameDto): Promise<void> {
-    await this.databaseService.contact.update({
+  async addNewContactWithEmit(
+    ownerId: number,
+    data: AddNewContactReq,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    this.logger.debug(
+      'addNewContactWithEmit called',
+      createLoggerMeta('contact', ContactService.name),
+    );
+    const db = tx ?? this.databaseService;
+    const targetUser = await this.userService.getUserByPhone(data.phone);
+
+    let contact = await db.contact.create({
+      data: {
+        ownerId: ownerId,
+        name: data.name,
+        targetId: targetUser.id,
+      },
+    });
+
+    contact = await this.getContact(contact.id);
+
+    await this.eventEmit.emitAsync('contact.created', contact);
+  }
+
+  async updateContactName(
+    data: UpdateContactNameDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const db = tx ?? this.databaseService;
+
+    await db.contact.update({
       where: {
         id: data.contactId,
       },
@@ -60,8 +199,11 @@ export class ContactService {
 
   async updateContactRelationId(
     data: UpdateContactRelationIdDto,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.databaseService.contact.update({
+    const db = tx ?? this.databaseService;
+
+    await db.contact.update({
       where: { id: data.contactId },
       data: {
         relationId: data.relationId,
@@ -71,19 +213,13 @@ export class ContactService {
 
   async updateContactUnreadCount(
     data: UpdateContactUnreadCountDto,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    await this.databaseService.contact.update({
+    const db = tx ?? this.databaseService;
+
+    await db.contact.update({
       where: { id: data.contactId },
       data: { totalUnreadMessage: data.totalUnreadMessage },
-    });
-  }
-
-  async updateContactLastMessage(
-    data: UpdateContactLastMessageIdDto,
-  ): Promise<void> {
-    await this.databaseService.contact.update({
-      where: { id: data.contactId },
-      data: { lastMessageId: data.lastMessageId },
     });
   }
 }
