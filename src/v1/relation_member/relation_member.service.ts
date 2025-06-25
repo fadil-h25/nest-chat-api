@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
-import { RelationMember } from '@prisma/client';
+import { RelationMember, Prisma } from '@prisma/client';
 import { GetRelationIdsWithBothUsersRes } from './dto/relation-member-response.dto';
+import { AddNewRelationMemberDto } from '../common/validation/schemas/relation-member.schema';
 
 @Injectable()
 export class RelationMemberService {
@@ -10,15 +11,29 @@ export class RelationMemberService {
   async addNewRelationMember(
     userId: number,
     relationId: number,
+    tx?: Prisma.TransactionClient,
   ): Promise<RelationMember> {
-    const relatioMember = await this.databaseService.relationMember.create({
+    const db = tx ?? this.databaseService;
+
+    const relationMember = await db.relationMember.create({
       data: {
         relationId,
         userId,
       },
     });
 
-    return relatioMember;
+    return relationMember;
+  }
+
+  async addTwoNewRelationMembers(
+    data: AddNewRelationMemberDto[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const db = tx ?? this.databaseService;
+
+    await db.relationMember.createMany({
+      data,
+    });
   }
 
   async getRelationIdsWithBothUsers(
@@ -43,6 +58,7 @@ export class RelationMemberService {
         userId: true,
       },
     });
+
     return relationMembers;
   }
 }

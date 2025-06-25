@@ -5,5 +5,6 @@ import { DatabaseModule } from 'src/database/database.module';
 @Module({
   providers: [RelationMemberService],
   imports: [DatabaseModule],
+  exports: [RelationMemberService],
 })
 export class RelationMemberModule {}
