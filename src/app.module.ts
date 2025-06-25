@@ -9,7 +9,7 @@ import { AuthModule } from './v1/auth/auth.module';
 import { RelationModule } from './v1/relation/relation.module';
 import { RelationMemberModule } from './v1/relation_member/relation_member.module';
 import { ContactModule } from './v1/contact/contact.module';
-import { MessageModule } from './v1/message/message.module';
+
 import { ChatModule } from './v1/chat/chat.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JwtModule } from '@nestjs/jwt';
@@ -33,7 +33,7 @@ import { format, transports } from 'winston';
     RelationModule,
     RelationMemberModule,
     ContactModule,
-    MessageModule,
+
     ChatModule,
     WinstonModule.forRoot({
       format: format.combine(format.timestamp(), format.json()),
