@@ -17,6 +17,7 @@ model User {
   contactTarget  Contact[]         @relation("contactTargetId")
   relationMember RelationMember[]
   message        Message[]
+  refreshToken   RefreshToken[]
 
   @@map("users")
 }
@@ -90,4 +91,15 @@ model Message {
   
 
   @@map("messages")
+}
+
+model RefreshToken{
+  id String @id @default(uuid())
+  userId     Int
+  tokenHash  String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  user User @relation(fields: [userId], references: [id])
+  @@map("refresh_token")
+
 }
