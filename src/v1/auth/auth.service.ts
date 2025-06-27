@@ -15,6 +15,14 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
+import { DatabaseService } from 'src/database/database.service';
+
+import { generateOpaqueToken, getRefreshTokenExpiry } from './auth.util';
+
+import { Role } from '../common/enum/role.enum';
+import { LoginResDto } from './dto/res/login-res.dto';
+import { AccessTokenPayload } from './types/access-token-payload.type';
+import { RefreshResDto } from './dto/res/refresh-res.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +30,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
+    private databaseService: DatabaseService,
   ) {}
 
   async register(data: RegisterReq): Promise<void> {
@@ -32,7 +41,7 @@ export class AuthService {
     await this.userService.addNewUser(data);
   }
 
-  async login(data: LoginReq): Promise<string> {
+  async login(data: LoginReq): Promise<LoginResDto> {
     this.logger.debug(
       'login called',
       createLoggerMeta('auth', AuthService.name),
@@ -42,10 +51,63 @@ export class AuthService {
     const result = await bcrypt.compare(data.password, user?.password);
     if (result == false)
       throw new UnauthorizedException('Email or password incorrect');
+    const accessToken = await this.createAccessToken(user.id, [Role.User]);
+    const refreshToken = await this.createRefreshToken(user.id);
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
 
-    const payload = { sub: user.id, roles: ['user'] };
+  async refresh(
+    refreshToken: string,
+    user: AccessTokenPayload,
+  ): Promise<RefreshResDto> {
+    const hashedToken =
+      await this.databaseService.refreshToken.findFirstOrThrow({
+        where: {
+          userId: user.id,
+        },
+      });
+
+    const result = await bcrypt.compare(refreshToken, hashedToken?.tokenHash);
+
+    if (!result) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    await this.databaseService.refreshToken.delete({
+      where: {
+        userId: user.sub,
+      },
+    });
+    const newRefseshToken = await this.createRefreshToken(user.sub);
+    const newAccessToken = await this.createAccessToken(user.sub, [Role.User]);
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefseshToken,
+    };
+  }
+
+  async createRefreshToken(userId: number): Promise<string> {
+    const refreshToken = generateOpaqueToken();
+    const expire = getRefreshTokenExpiry();
+
+    const hanshedToken = await bcrypt.hash(refreshToken, 10);
+
+    await this.databaseService.refreshToken.create({
+      data: {
+        tokenHash: hanshedToken,
+        userId: userId,
+        expiresAt: expire,
+      },
+    });
+    return refreshToken;
+  }
+
+  async createAccessToken(userId: number, roles: Role[]): Promise<string> {
+    const payload: AccessTokenPayload = { sub: userId, roles };
     return await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
+      expiresIn: '30',
     });
   }
 }
