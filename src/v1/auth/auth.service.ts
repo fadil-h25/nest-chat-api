@@ -19,9 +19,10 @@ import { DatabaseService } from 'src/database/database.service';
 
 import { generateOpaqueToken, getRefreshTokenExpiry } from './auth.util';
 
-import { AccessTokenPayload } from '../common/types/auth/access-token-payload.type';
 import { Role } from '../common/enum/role.enum';
 import { LoginResDto } from './dto/res/login-res.dto';
+import { AccessTokenPayload } from './types/access-token-payload.type';
+import { RefreshResDto } from './dto/res/refresh-res.dto';
 
 @Injectable()
 export class AuthService {
@@ -55,6 +56,35 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  async refresh(
+    refreshToken: string,
+    user: AccessTokenPayload,
+  ): Promise<RefreshResDto> {
+    const hashedToken =
+      await this.databaseService.refreshToken.findFirstOrThrow({
+        where: {
+          userId: user.id,
+        },
+      });
+
+    const result = await bcrypt.compare(refreshToken, hashedToken?.tokenHash);
+
+    if (!result) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    await this.databaseService.refreshToken.delete({
+      where: {
+        userId: user.sub,
+      },
+    });
+    const newRefseshToken = await this.createRefreshToken(user.sub);
+    const newAccessToken = await this.createAccessToken(user.sub, [Role.User]);
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefseshToken,
     };
   }
 
