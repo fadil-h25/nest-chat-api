@@ -19,6 +19,10 @@ import { DatabaseService } from 'src/database/database.service';
 
 import { generateOpaqueToken, getRefreshTokenExpiry } from './auth.util';
 
+import { AccessTokenPayload } from '../common/types/auth/access-token-payload.type';
+import { Role } from '../common/enum/role.enum';
+import { LoginResDto } from './dto/res/login-res.dto';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -36,7 +40,7 @@ export class AuthService {
     await this.userService.addNewUser(data);
   }
 
-  async login(data: LoginReq): Promise<string> {
+  async login(data: LoginReq): Promise<LoginResDto> {
     this.logger.debug(
       'login called',
       createLoggerMeta('auth', AuthService.name),
@@ -46,11 +50,12 @@ export class AuthService {
     const result = await bcrypt.compare(data.password, user?.password);
     if (result == false)
       throw new UnauthorizedException('Email or password incorrect');
-
-    const payload = { sub: user.id, roles: ['user'] };
-    return await this.jwtService.signAsync(payload, {
-      expiresIn: '30',
-    });
+    const accessToken = await this.createAccessToken(user.id, [Role.User]);
+    const refreshToken = await this.createRefreshToken(user.id);
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
   async createRefreshToken(userId: number): Promise<string> {
@@ -67,5 +72,12 @@ export class AuthService {
       },
     });
     return refreshToken;
+  }
+
+  async createAccessToken(userId: number, roles: Role[]): Promise<string> {
+    const payload: AccessTokenPayload = { sub: userId, roles };
+    return await this.jwtService.signAsync(payload, {
+      expiresIn: '30',
+    });
   }
 }
