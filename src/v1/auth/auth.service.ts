@@ -23,6 +23,7 @@ import { Role } from '../common/enum/role.enum';
 import { LoginResDto } from './dto/res/login-res.dto';
 import { AccessTokenPayload } from './types/access-token-payload.type';
 import { RefreshResDto } from './dto/res/refresh-res.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -66,7 +67,7 @@ export class AuthService {
     const hashedToken =
       await this.databaseService.refreshToken.findFirstOrThrow({
         where: {
-          userId: user.id,
+          userId: user.sub,
         },
       });
 
@@ -75,26 +76,36 @@ export class AuthService {
     if (!result) {
       throw new UnauthorizedException('Invalid refresh token');
     }
-    await this.databaseService.refreshToken.delete({
-      where: {
-        userId: user.sub,
-      },
-    });
-    const newRefseshToken = await this.createRefreshToken(user.sub);
+
+    let newRefreshToken: string = '';
     const newAccessToken = await this.createAccessToken(user.sub, [Role.User]);
+
+    await this.databaseService.$transaction(async (tx) => {
+      await tx.refreshToken.delete({
+        where: {
+          userId: user.sub,
+        },
+      });
+      newRefreshToken = await this.createRefreshToken(user.sub, tx);
+    });
+
     return {
       accessToken: newAccessToken,
-      refreshToken: newRefseshToken,
+      refreshToken: newRefreshToken,
     };
   }
 
-  async createRefreshToken(userId: number): Promise<string> {
+  async createRefreshToken(
+    userId: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<string> {
+    const db = tx || this.databaseService;
     const refreshToken = generateOpaqueToken();
     const expire = getRefreshTokenExpiry();
 
     const hanshedToken = await bcrypt.hash(refreshToken, 10);
 
-    await this.databaseService.refreshToken.create({
+    await db.refreshToken.create({
       data: {
         tokenHash: hanshedToken,
         userId: userId,
