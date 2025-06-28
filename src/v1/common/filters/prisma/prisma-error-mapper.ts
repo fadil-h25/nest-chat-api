@@ -1,8 +1,9 @@
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 export function mapPrismaError(
   exception: Prisma.PrismaClientKnownRequestError,
+  logger: Logger,
 ) {
   switch (exception.code) {
     case 'P2002':
@@ -27,6 +28,8 @@ export function mapPrismaError(
       };
 
     default:
+      logger.error(exception);
+
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal Server Error',
