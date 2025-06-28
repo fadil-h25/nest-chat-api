@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { LoginRes, RegisterRes } from './dto/auth-response.dto';
 
 import { ZodValidationPipe } from '../common/pipes/zod-validation/zod-validation.pipe';
@@ -12,9 +12,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 
 import { Public } from '../common/decorator/public.decorator';
+import { LoginResDto } from './dto/res/login-res.dto';
+import { getUserIdHttp } from '../utils/auth/get-user-id.util';
+import { Refresh } from '../common/decorator/refesh.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -41,17 +44,53 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body(new ZodValidationPipe(LoginSchema)) body: LoginReq,
   ): Promise<LoginRes> {
-    const token = await this.authService.login(body);
+    const tokens: LoginResDto = await this.authService.login(body);
 
-    response.cookie('chat-token', token);
+    response.cookie('chat-token', tokens.accessToken, {
+      httpOnly: true,
+      maxAge: 30 * 60 * 1000, // 30 menit
+      sameSite: 'lax', // atau 'strict' kalau React dan API di port sama
+      secure: false, // karena belum HTTPS
+    });
+
+    response.cookie('chat-refresh-token', tokens.refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 60 * 1000, // 30 menit
+      sameSite: 'lax', // atau 'strict' kalau React dan API di port sama
+      secure: false, // karena belum HTTPS
+    });
     return {
       message: 'Login successful',
     };
   }
 
-  @Get('test')
-  // @UseGuards(AuthGuard)
-  sayHay(): string {
-    return 'Halo';
+  @Refresh()
+  @Post('refresh')
+  async refresh(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<any> {
+    const refreshToken = request.cookies['chat-refresh-token'] as string;
+    const tokens = await this.authService.refresh(
+      refreshToken,
+      getUserIdHttp(request),
+    );
+    response.cookie('chat-token', tokens.accessToken, {
+      httpOnly: true,
+      maxAge: 30 * 60 * 1000, // 30 menit
+      sameSite: 'lax', // atau 'strict' kalau React dan API di port sama
+      secure: false, // karena belum HTTPS
+    });
+
+    response.cookie('chat-refresh-token', tokens.refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 60 * 1000, // 30 menit
+      sameSite: 'lax', // atau 'strict' kalau React dan API di port sama
+      secure: false, // karena belum HTTPS
+    });
+
+    return {
+      message: 'Refresh succesful',
+    };
   }
 }
