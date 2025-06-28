@@ -22,7 +22,7 @@ export class PrismaWsKnownFilter
     const ctx = host.switchToWs();
     const client = ctx.getClient<Socket>();
 
-    const errorPayload = mapPrismaError(exception);
+    const errorPayload = mapPrismaError(exception, this.logger);
 
     client.emit('contact:create:error', errorPayload);
   }
