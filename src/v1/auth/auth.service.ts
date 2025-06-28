@@ -53,6 +53,12 @@ export class AuthService {
     if (result == false)
       throw new UnauthorizedException('Email or password incorrect');
     const accessToken = await this.createAccessToken(user.id, [Role.User]);
+
+    await this.databaseService.refreshToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    });
     const refreshToken = await this.createRefreshToken(user.id);
     return {
       accessToken,
@@ -60,17 +66,21 @@ export class AuthService {
     };
   }
 
-  async refresh(
-    refreshToken: string,
-    user: AccessTokenPayload,
-  ): Promise<RefreshResDto> {
+  async refresh(refreshToken: string, userId: number): Promise<RefreshResDto> {
+    this.logger.debug(
+      'refresh called',
+      createLoggerMeta('auth', AuthService.name),
+    );
+
     const hashedToken =
       await this.databaseService.refreshToken.findFirstOrThrow({
         where: {
-          userId: user.sub,
+          userId: userId,
         },
       });
 
+    this.logger.debug(refreshToken);
+    this.logger.debug(hashedToken.tokenHash);
     const result = await bcrypt.compare(refreshToken, hashedToken?.tokenHash);
 
     if (!result) {
@@ -78,15 +88,15 @@ export class AuthService {
     }
 
     let newRefreshToken: string = '';
-    const newAccessToken = await this.createAccessToken(user.sub, [Role.User]);
+    const newAccessToken = await this.createAccessToken(userId, [Role.User]);
 
     await this.databaseService.$transaction(async (tx) => {
-      await tx.refreshToken.delete({
+      await tx.refreshToken.deleteMany({
         where: {
-          userId: user.sub,
+          userId: userId,
         },
       });
-      newRefreshToken = await this.createRefreshToken(user.sub, tx);
+      newRefreshToken = await this.createRefreshToken(userId, tx);
     });
 
     return {
@@ -99,6 +109,11 @@ export class AuthService {
     userId: number,
     tx?: Prisma.TransactionClient,
   ): Promise<string> {
+    this.logger.debug(
+      'createRefreshToken called',
+      createLoggerMeta('auth', AuthService.name),
+    );
+
     const db = tx || this.databaseService;
     const refreshToken = generateOpaqueToken();
     const expire = getRefreshTokenExpiry();
@@ -112,10 +127,15 @@ export class AuthService {
         expiresAt: expire,
       },
     });
+    this.logger.debug('createRefreshToken finished');
     return refreshToken;
   }
 
   async createAccessToken(userId: number, roles: Role[]): Promise<string> {
+    this.logger.debug(
+      'createAccessToken called',
+      createLoggerMeta('auth', AuthService.name),
+    );
     const payload: AccessTokenPayload = { sub: userId, roles };
     return await this.jwtService.signAsync(payload, {
       expiresIn: '30',
