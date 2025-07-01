@@ -63,7 +63,7 @@ export class ContactWsGateway implements OnGatewayInit {
         data,
       );
 
-      await this.getNewContact(client, newContact.id);
+      await this.sendNewContact(client, newContact.id);
     } catch (error) {
       throw new WsCustomException(eventName, 'create contatc fail', error);
     }
