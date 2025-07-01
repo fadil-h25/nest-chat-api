@@ -138,7 +138,7 @@ export class AuthService {
     );
     const payload: AccessTokenPayload = { sub: userId, roles };
     return await this.jwtService.signAsync(payload, {
-      expiresIn: '30',
+      expiresIn: '30m',
     });
   }
 }
