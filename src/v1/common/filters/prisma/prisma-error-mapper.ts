@@ -28,8 +28,6 @@ export function mapPrismaError(
       };
 
     default:
-      logger.error(exception);
-
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal Server Error',

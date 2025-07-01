@@ -10,6 +10,7 @@ import { mapPrismaError } from '../prisma-error-mapper';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { Socket } from 'socket.io';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { WsCustomException } from 'src/v1/common/exceptions/ws-custom.exception';
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaWsKnownFilter
