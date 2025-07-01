@@ -19,6 +19,8 @@ import { AuthGuard } from './v1/auth/auth.guard';
 import { PrismaHttpKnownFilter } from './v1/common/filters/prisma/prisma-http-known/prisma-http-known.filter';
 import { WinstonModule } from 'nest-winston';
 import { format, transports } from 'winston';
+import { ContactWsModule } from './v1/contact-ws/contact-ws.module';
+import { UserWsModule } from './v1/user-ws/user-ws.module';
 
 @Module({
   imports: [
@@ -46,9 +48,13 @@ import { format, transports } from 'winston';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('SECRET_KEY'),
-        signOptions: { expiresIn: '60s' },
+        signOptions: {},
       }),
     }),
+
+    ContactWsModule,
+
+    UserWsModule,
   ],
   controllers: [AppController],
   providers: [
