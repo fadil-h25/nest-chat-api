@@ -10,7 +10,6 @@ import { RelationModule } from './v1/relation/relation.module';
 import { RelationMemberModule } from './v1/relation_member/relation_member.module';
 import { ContactModule } from './v1/contact/contact.module';
 
-import { ChatModule } from './v1/chat/chat.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
@@ -36,7 +35,6 @@ import { UserWsModule } from './v1/user-ws/user-ws.module';
     RelationMemberModule,
     ContactModule,
 
-    ChatModule,
     WinstonModule.forRoot({
       format: format.combine(format.timestamp(), format.json()),
       level: 'debug',
