@@ -1,7 +1,6 @@
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -11,6 +10,7 @@ import { ContactService } from '../contact/contact.service';
 import {
   AddNewContact,
   AddNewContactReq,
+  UpdateContactName,
 } from '../common/validation/schemas/contact.schema';
 import { Server, Socket } from 'socket.io';
 import { getUserIdWs } from '../utils/auth/get-user-id.util';
@@ -20,11 +20,14 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
 
-import { GetContactRes } from '../contact/dto/contact-response.dto';
 import { WsCustomException } from '../common/exceptions/ws-custom.exception';
 import { validateWith } from '../common/validation/validate-with.validation';
 import { WsCustomFilter } from '../common/filters/ws/ws-custom/ws-custom.filter';
-import { Contact } from '@prisma/client';
+import { Status } from '../common/enum/status.enum';
+import {
+  AddNewContactRes,
+  UpdateContactRes,
+} from '../contact/dto/contact-response.dto';
 
 @UseFilters(WsCustomFilter)
 @Injectable()
@@ -34,7 +37,7 @@ import { Contact } from '@prisma/client';
     origin: 'http://localhost:3000',
   },
 })
-export class ContactWsGateway implements OnGatewayInit {
+export class ContactWsGateway {
   constructor(
     private contactService: ContactService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
@@ -42,7 +45,7 @@ export class ContactWsGateway implements OnGatewayInit {
 
   @WebSocketServer()
   server: Server;
-  afterInit(server: any) {}
+  // afterInit(server: any) {}
 
   @SubscribeMessage('contact:create')
   async listenCreateNewContact(
@@ -63,32 +66,87 @@ export class ContactWsGateway implements OnGatewayInit {
         data,
       );
 
-      await this.sendNewContact(client, newContact.id);
+      this.sendNewContact(client, newContact);
     } catch (error) {
-      throw new WsCustomException(eventName, 'create contatc fail', error);
+      throw new WsCustomException(eventName, 'create contact fail', error);
     }
 
     return {
       event: eventName,
       data: {
+        status: Status.OK,
         message: 'create contact successful',
       },
     };
   }
 
-  async sendNewContact(@ConnectedSocket() client: Socket, contactId: number) {
+  sendNewContact(
+    @ConnectedSocket() client: Socket,
+    newContact: AddNewContactRes,
+  ) {
     const eventName = 'contact:get_new';
     try {
-      const contact = await this.contactService.getContact(contactId);
-      this.server.to('user:' + getUserIdWs(client)).emit(eventName, contact);
+      this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
+        status: Status.OK,
+        message: 'get new contact successful',
+        data: newContact,
+      });
     } catch (error) {
       throw new WsCustomException(eventName, 'get new contact fail', error);
     }
   }
 
   @SubscribeMessage('contact:update')
-  updatedContact() {}
+  async updatedContact(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any,
+  ): Promise<WsResponse> {
+    const eventName = 'contact:update';
+    this.logger.debug(
+      'updatedContact called ',
+      createLoggerMeta('contact-ws', ContactWsGateway.name),
+    );
 
-  @SubscribeMessage('contact:get_updated')
-  getUpdatedContact() {}
+    try {
+      const validatedData = validateWith(UpdateContactName, data);
+      const updatedContact: UpdateContactRes =
+        await this.contactService.updateContactName(validatedData);
+      return {
+        event: eventName,
+        data: {
+          status: Status.OK,
+          message: 'Contact updated successfully',
+          contact: updatedContact,
+        },
+      };
+
+      this.sendUpdatedContact(client, updatedContact);
+    } catch (error) {
+      throw new WsCustomException(eventName, 'update contact fail', error);
+    }
+  }
+
+  sendUpdatedContact(
+    @ConnectedSocket() client: Socket,
+    updatedContact: UpdateContactRes,
+  ) {
+    const eventName = 'contact:get_updated';
+    this.logger.debug(
+      'sendUpdatedContact called ',
+      createLoggerMeta('contact-ws', ContactWsGateway.name),
+    );
+
+    try {
+      this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
+        status: Status.OK,
+
+        data: {
+          message: 'Contact updated',
+          contact: updatedContact,
+        },
+      });
+    } catch (error) {
+      throw new WsCustomException(eventName, 'get updated contact fail', error);
+    }
+  }
 }
