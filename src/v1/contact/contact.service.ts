@@ -10,8 +10,12 @@ import {
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { Contact, Prisma } from '@prisma/client';
-import { GetContactRes } from './dto/contact-response.dto';
+import { Prisma } from '@prisma/client';
+import {
+  AddNewContactRes,
+  GetContactRes,
+  UpdateContactRes,
+} from './dto/contact-response.dto';
 import { UserService } from '../user/user.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
@@ -137,7 +141,7 @@ export class ContactService {
     ownerId: number,
     data: AddNewContactReq,
     tx?: Prisma.TransactionClient,
-  ): Promise<Contact> {
+  ): Promise<AddNewContactRes> {
     this.logger.debug(
       'addNewContact called',
       createLoggerMeta('contact', ContactService.name),
@@ -150,6 +154,23 @@ export class ContactService {
         ownerId: ownerId,
         name: data.name,
         targetId: targetUser.id,
+      },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        targetId: true,
+        totalUnreadMessage: true,
+        relationId: true,
+        relation: {
+          select: {
+            lastMessage: {
+              select: {
+                content: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -184,7 +205,7 @@ export class ContactService {
   async updateContactName(
     data: UpdateContactNameDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<void> {
+  ): Promise<UpdateContactRes> {
     const db = tx ?? this.databaseService;
 
     await db.contact.update({
@@ -194,7 +215,25 @@ export class ContactService {
       data: {
         name: data.name,
       },
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        targetId: true,
+        totalUnreadMessage: true,
+        relationId: true,
+        relation: {
+          select: {
+            lastMessage: {
+              select: {
+                content: true,
+              },
+            },
+          },
+        },
+      },
     });
+    return this.getContact(data.contactId);
   }
 
   async updateContactRelationId(
