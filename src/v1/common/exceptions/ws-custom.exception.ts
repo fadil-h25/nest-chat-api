@@ -4,12 +4,14 @@ import { ZodError } from 'zod';
 import { ErrorCustom } from '../errors/error-custom.type';
 import { prismaErrorMapper } from '../errors/mappers/prisma-error.mapper';
 import { zodErrorMapper } from '../errors/mappers/zod-error.mapper';
+import { Status } from '../enum/status.enum';
 
 export class WsCustomException extends Error {
   public readonly eventName: string;
   public readonly statusCode: number;
   public readonly errors: ErrorCustom[];
   public readonly originalError: unknown;
+  public readonly status: Status = Status.ERROR;
 
   constructor(eventName: string, message: string, originalError: unknown) {
     super(message);
