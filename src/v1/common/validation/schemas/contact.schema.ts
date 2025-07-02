@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-  validationUserId,
-  validationUserName,
-  validationUserPhone,
-} from './user.schema';
+import { validationUserName, validationUserPhone } from './user.schema';
 import { validationRelationIdNullable } from './relation.schema';
 
 export const validationContactId = z.number().min(1, 'Contact id invalid');
