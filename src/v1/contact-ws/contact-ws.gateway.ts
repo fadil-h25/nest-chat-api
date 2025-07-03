@@ -11,6 +11,7 @@ import {
   AddNewContact,
   AddNewContactReq,
   UpdateContactName,
+  validationContactId,
 } from '../common/validation/schemas/contact.schema';
 import { Server, Socket } from 'socket.io';
 import { getUserIdWs } from '../utils/auth/get-user-id.util';
@@ -150,6 +151,52 @@ export class ContactWsGateway {
       });
     } catch (error) {
       throw new WsCustomException(eventName, 'get updated contact fail', error);
+    }
+  }
+
+  @SubscribeMessage('contact:delete')
+  async deleteContact(
+    @ConnectedSocket() client: Socket,
+    @MessageBody('id') id: number,
+  ): Promise<WsResponse> {
+    const eventName = 'contact:delete';
+    this.logger.debug(
+      'deleteContact called ',
+      createLoggerMeta('contact-ws', ContactWsGateway.name),
+    );
+
+    try {
+      const validContactId = validateWith(validationContactId, id);
+      await this.contactService.deleteContact(validContactId);
+
+      this.sendDeletedContact(client, validContactId);
+      return {
+        event: eventName,
+        data: {
+          status: Status.OK,
+          message: 'Contact deleted successfully',
+        },
+      };
+    } catch (error) {
+      throw new WsCustomException(eventName, 'delete contact fail', error);
+    }
+  }
+
+  sendDeletedContact(@ConnectedSocket() client: Socket) {
+    const eventName = 'contact:get_deleted';
+    this.logger.debug(
+      'sendDeletedContact called ',
+      createLoggerMeta('contact-ws', ContactWsGateway.name),
+    );
+
+    try {
+      this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
+        status: Status.OK,
+        message: 'Contact deleted',
+        data: {},
+      });
+    } catch (error) {
+      throw new WsCustomException(eventName, 'get deleted contact fail', error);
     }
   }
 }
