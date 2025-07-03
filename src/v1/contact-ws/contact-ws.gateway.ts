@@ -84,6 +84,10 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     newContact: AddNewContactRes,
   ) {
+    this.logger.debug(
+      'sendNewContact called ',
+      createLoggerMeta('contact-ws', ContactWsGateway.name),
+    );
     const eventName = 'contact:get_new';
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
@@ -111,16 +115,15 @@ export class ContactWsGateway {
       const validatedData = validateWith(UpdateContactName, data);
       const updatedContact: UpdateContactRes =
         await this.contactService.updateContactName(validatedData);
+
+      this.sendUpdatedContact(client, updatedContact);
       return {
         event: eventName,
         data: {
           status: Status.OK,
           message: 'Contact updated successfully',
-          contact: updatedContact,
         },
       };
-
-      this.sendUpdatedContact(client, updatedContact);
     } catch (error) {
       throw new WsCustomException(eventName, 'update contact fail', error);
     }
@@ -139,9 +142,9 @@ export class ContactWsGateway {
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
         status: Status.OK,
+        message: 'Contact updated',
 
         data: {
-          message: 'Contact updated',
           contact: updatedContact,
         },
       });
