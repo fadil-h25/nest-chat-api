@@ -43,6 +43,11 @@ export class ContactService {
         ownerId: true,
         name: true,
         targetId: true,
+        target: {
+          select: {
+            phone: true,
+          },
+        },
         totalUnreadMessage: true,
         relationId: true,
         relation: {
@@ -70,6 +75,11 @@ export class ContactService {
         ownerId: true,
         name: true,
         targetId: true,
+        target: {
+          select: {
+            phone: true,
+          },
+        },
         totalUnreadMessage: true,
         relationId: true,
         relation: {
@@ -105,6 +115,11 @@ export class ContactService {
         ownerId: true,
         name: true,
         targetId: true,
+        target: {
+          select: {
+            phone: true,
+          },
+        },
         totalUnreadMessage: true,
         relationId: true,
         relation: {
@@ -160,6 +175,11 @@ export class ContactService {
         ownerId: true,
         name: true,
         targetId: true,
+        target: {
+          select: {
+            phone: true,
+          },
+        },
         totalUnreadMessage: true,
         relationId: true,
         relation: {
