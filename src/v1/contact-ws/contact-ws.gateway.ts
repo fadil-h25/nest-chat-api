@@ -134,7 +134,7 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     updatedContact: UpdateContactRes,
   ) {
-    const eventName = 'contact:get_updated';
+    const eventName = 'contact:updated';
     this.logger.debug(
       'sendUpdatedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
