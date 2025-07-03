@@ -182,12 +182,24 @@ export class ContactWsGateway {
     }
   }
 
-  sendDeletedContact(@ConnectedSocket() client: Socket) {
+  sendDeletedContact(@ConnectedSocket() client: Socket, contactId: number) {
     const eventName = 'contact:get_deleted';
     this.logger.debug(
       'sendDeletedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
     );
+
+    try {
+      this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
+        status: Status.OK,
+        message: 'Contact deleted',
+        data: {
+          contactId,
+        },
+      });
+    } catch (error) {
+      throw new WsCustomException(eventName, 'get deleted contact fail', error);
+    }
 
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
