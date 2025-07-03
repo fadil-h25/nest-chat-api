@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { WsCustomException } from 'src/v1/common/exceptions/ws-custom.exception';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { getUserIdWs } from 'src/v1/utils/auth/get-user-id.util';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from 'src/v1/utils/logger/logger.util';
