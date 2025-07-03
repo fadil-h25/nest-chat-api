@@ -3,6 +3,9 @@ export type GetContactRes = {
   ownerId: number;
   name: string;
   targetId: number;
+  target: {
+    phone: string;
+  };
   totalUnreadMessage: number;
   relationId: number | null;
   relation: {
@@ -17,6 +20,9 @@ export type AddNewContactRes = {
   ownerId: number;
   name: string;
   targetId: number;
+  target: {
+    phone: string;
+  };
   totalUnreadMessage: number;
   relationId: number | null;
   relation: {
@@ -31,6 +37,9 @@ export type UpdateContactRes = {
   ownerId: number;
   name: string;
   targetId: number;
+  target: {
+    phone: string;
+  };
   totalUnreadMessage: number;
   relationId: number | null;
   relation: {
