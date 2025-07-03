@@ -28,6 +28,7 @@ export class WsCustomFilter implements ExceptionFilter {
     const eventName = `${exception.eventName}:error`;
 
     const payload = {
+      status: exception.status,
       statusCode: exception.statusCode,
       message: exception.message,
       errors: exception.errors,
@@ -35,8 +36,7 @@ export class WsCustomFilter implements ExceptionFilter {
 
     const clientId = getUserIdWs(client);
     const room: string = 'user:' + String(clientId);
-    this.logger.debug('event: ' + eventName);
-    this.logger.debug('room: ' + room);
+
     server.to(room).emit(eventName, payload);
   }
 }
