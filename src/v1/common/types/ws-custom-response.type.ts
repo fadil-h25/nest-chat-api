@@ -1,6 +1,8 @@
-import { WsResponse } from '@nestjs/websockets';
-import { Status } from '../enum/status.enum';
+import { ContactWsEvent } from 'src/v1/common/enum/contact-event';
+import { Status } from 'src/v1/common/enum/status.enum';
 
-export interface WsCustomResponse<T = any> extends WsResponse<T> {
+export type WsCustomResponse<T, E extends ContactWsEvent> = {
+  event: E;
   status: Status;
-}
+  data: T;
+};
