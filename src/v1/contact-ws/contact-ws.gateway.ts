@@ -30,6 +30,8 @@ import {
   AddNewContactRes,
   UpdateContactRes,
 } from '../contact/dto/contact-response.dto';
+import { createWsCustomResponse } from '../utils/ws/create-ws-custom-response.util';
+import { ContactWsEvent } from '../common/enum/contact-event';
 
 @UseFilters(WsCustomFilter)
 @Injectable()
@@ -59,7 +61,7 @@ export class ContactWsGateway {
       'createNewContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
     );
-    const eventName = 'contact:create';
+    const eventName = ContactWsEvent.CREATE_CONTACT;
 
     try {
       validateWith(AddNewContact, data);
@@ -90,7 +92,7 @@ export class ContactWsGateway {
       'sendNewContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
     );
-    const eventName = 'contact:get_new';
+    const eventName = ContactWsEvent.CREATED_CONTACT;
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
         status: Status.OK,
@@ -107,7 +109,7 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ): Promise<WsResponse> {
-    const eventName = 'contact:update';
+    const eventName = ContactWsEvent.UPDATE_CONTACT;
     this.logger.debug(
       'updatedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
@@ -138,7 +140,7 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     updatedContact: UpdateContactRes,
   ) {
-    const eventName = 'contact:updated';
+    const eventName = ContactWsEvent.UPDATED_CONTACT;
     this.logger.debug(
       'sendUpdatedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
@@ -146,12 +148,10 @@ export class ContactWsGateway {
 
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
-        status: Status.OK,
-        message: 'Contact updated',
-
-        data: {
-          contact: updatedContact,
-        },
+        ...createWsCustomResponse(
+          ContactWsEvent.UPDATED_CONTACT,
+          updatedContact,
+        ),
       });
     } catch (error) {
       throw new WsCustomException(eventName, 'get updated contact fail', error);
@@ -163,7 +163,7 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody('id') id: number,
   ): Promise<WsResponse> {
-    const eventName = 'contact:delete';
+    const eventName = ContactWsEvent.DELETE_CONTACT;
     this.logger.debug(
       'deleteContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
@@ -187,7 +187,7 @@ export class ContactWsGateway {
   }
 
   sendDeletedContact(@ConnectedSocket() client: Socket, contactId: number) {
-    const eventName = 'contact:get_deleted';
+    const eventName = ContactWsEvent.DELETED_CONTACT;
     this.logger.debug(
       'sendDeletedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
