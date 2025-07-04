@@ -11,6 +11,7 @@ import {
   AddNewContact,
   AddNewContactReq,
   UpdateContactName,
+  UpdateContactNameDto,
   validationContactId,
 } from '../common/validation/schemas/contact.schema';
 import { Server, Socket } from 'socket.io';
@@ -102,7 +103,7 @@ export class ContactWsGateway {
   }
 
   @SubscribeMessage('contact:update')
-  async updatedContact(
+  async linstenUpdateContact(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
   ): Promise<WsResponse> {
@@ -113,7 +114,10 @@ export class ContactWsGateway {
     );
 
     try {
-      const validatedData = validateWith(UpdateContactName, data);
+      const validatedData: UpdateContactNameDto = validateWith(
+        UpdateContactName,
+        data,
+      );
       const updatedContact: UpdateContactRes =
         await this.contactService.updateContactName(validatedData);
 
