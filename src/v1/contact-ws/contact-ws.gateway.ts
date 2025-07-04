@@ -25,7 +25,7 @@ import { createLoggerMeta } from '../utils/logger/logger.util';
 import { WsCustomException } from '../common/exceptions/ws-custom.exception';
 import { validateWith } from '../common/validation/validate-with.validation';
 import { WsCustomFilter } from '../common/filters/ws/ws-custom/ws-custom.filter';
-import { Status } from '../common/enum/status.enum';
+
 import {
   AddNewContactRes,
   UpdateContactRes,
@@ -62,31 +62,32 @@ export class ContactWsGateway {
       createLoggerMeta('contact-ws', ContactWsGateway.name),
     );
     const eventName = ContactWsEvent.CREATE_CONTACT;
+    let createdContact: AddNewContactRes;
 
     try {
       validateWith(AddNewContact, data);
-      const newContact = await this.contactService.addNewContact(
+      createdContact = await this.contactService.addNewContact(
         getUserIdWs(client),
         data,
       );
 
-      this.sendNewContact(client, newContact);
+      this.sendNewContact(client, createdContact);
     } catch (error) {
       throw new WsCustomException(eventName, 'create contact fail', error);
     }
 
     return {
-      event: eventName,
-      data: {
-        status: Status.OK,
-        message: 'create contact successful',
-      },
+      ...createWsCustomResponse(
+        ContactWsEvent.CREATED_CONTACT,
+        createdContact,
+        200,
+      ),
     };
   }
 
   sendNewContact(
     @ConnectedSocket() client: Socket,
-    newContact: AddNewContactRes,
+    createdContact: AddNewContactRes,
   ) {
     this.logger.debug(
       'sendNewContact called ',
@@ -95,9 +96,11 @@ export class ContactWsGateway {
     const eventName = ContactWsEvent.CREATED_CONTACT;
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
-        status: Status.OK,
-        message: 'get new contact successful',
-        data: newContact,
+        ...createWsCustomResponse(
+          ContactWsEvent.UPDATED_CONTACT,
+          createdContact,
+          200,
+        ),
       });
     } catch (error) {
       throw new WsCustomException(eventName, 'get new contact fail', error);
@@ -125,11 +128,11 @@ export class ContactWsGateway {
 
       this.sendUpdatedContact(client, updatedContact);
       return {
-        event: eventName,
-        data: {
-          status: Status.OK,
-          message: 'Contact updated successfully',
-        },
+        ...createWsCustomResponse(
+          ContactWsEvent.UPDATED_CONTACT,
+          updatedContact,
+          200,
+        ),
       };
     } catch (error) {
       throw new WsCustomException(eventName, 'update contact fail', error);
@@ -151,6 +154,7 @@ export class ContactWsGateway {
         ...createWsCustomResponse(
           ContactWsEvent.UPDATED_CONTACT,
           updatedContact,
+          200,
         ),
       });
     } catch (error) {
@@ -175,11 +179,13 @@ export class ContactWsGateway {
 
       this.sendDeletedContact(client, validContactId);
       return {
-        event: eventName,
-        data: {
-          status: Status.OK,
-          message: 'Contact deleted successfully',
-        },
+        ...createWsCustomResponse(
+          eventName,
+          {
+            id: validContactId,
+          },
+          204,
+        ),
       };
     } catch (error) {
       throw new WsCustomException(eventName, 'delete contact fail', error);
@@ -195,21 +201,13 @@ export class ContactWsGateway {
 
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
-        status: Status.OK,
-        message: 'Contact deleted',
-        data: {
-          contactId,
-        },
-      });
-    } catch (error) {
-      throw new WsCustomException(eventName, 'get deleted contact fail', error);
-    }
-
-    try {
-      this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
-        status: Status.OK,
-        message: 'Contact deleted',
-        data: {},
+        ...createWsCustomResponse(
+          eventName,
+          {
+            id: contactId,
+          },
+          204,
+        ),
       });
     } catch (error) {
       throw new WsCustomException(eventName, 'get deleted contact fail', error);
