@@ -228,7 +228,7 @@ export class ContactService {
   ): Promise<UpdateContactRes> {
     const db = tx ?? this.databaseService;
 
-    await db.contact.update({
+    const updatedContact = await db.contact.update({
       where: {
         id: data.contactId,
       },
@@ -240,6 +240,11 @@ export class ContactService {
         ownerId: true,
         name: true,
         targetId: true,
+        target: {
+          select: {
+            phone: true,
+          },
+        },
         totalUnreadMessage: true,
         relationId: true,
         relation: {
@@ -253,7 +258,7 @@ export class ContactService {
         },
       },
     });
-    return this.getContact(data.contactId);
+    return updatedContact;
   }
 
   async updateContactRelationId(
