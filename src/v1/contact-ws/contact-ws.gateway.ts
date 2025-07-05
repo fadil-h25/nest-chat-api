@@ -51,7 +51,7 @@ export class ContactWsGateway {
   server: Server;
   // afterInit(server: any) {}
 
-  @SubscribeMessage('contact:create')
+  @SubscribeMessage(ContactWsEvent.CREATE_CONTACT)
   async listenCreateNewContact(
     @ConnectedSocket() client: Socket,
     @MessageBody()
@@ -107,7 +107,7 @@ export class ContactWsGateway {
     }
   }
 
-  @SubscribeMessage('contact:update')
+  @SubscribeMessage(ContactWsEvent.UPDATE_CONTACT)
   async linstenUpdateContact(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: any,
@@ -129,7 +129,7 @@ export class ContactWsGateway {
       this.sendUpdatedContact(client, updatedContact);
       return {
         ...createWsCustomResponse(
-          ContactWsEvent.UPDATED_CONTACT,
+          ContactWsEvent.UPDATE_CONTACT,
           updatedContact,
           200,
         ),
@@ -162,7 +162,7 @@ export class ContactWsGateway {
     }
   }
 
-  @SubscribeMessage('contact:delete')
+  @SubscribeMessage(ContactWsEvent.DELETE_CONTACT)
   async deleteContact(
     @ConnectedSocket() client: Socket,
     @MessageBody('id') id: number,
