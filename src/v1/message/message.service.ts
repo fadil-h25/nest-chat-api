@@ -17,7 +17,6 @@ export class MessageService {
   ) {}
 
   async createNewMessage(
-    userId: number,
     data: CreateMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<CreateMessageResponseDto> {
@@ -30,7 +29,7 @@ export class MessageService {
       data: {
         content: data.content,
         relationId: data.relationId,
-        ownerId: userId,
+        ownerId: data.ownerId,
       },
       select: {
         id: true,
@@ -50,7 +49,7 @@ export class MessageService {
 
     return message;
   }
-  // findMessage(): Promise<FindMessageResponseDto> {}
+  findMessage(): Promise<FindMessageResponseDto> {}
   findMessages() {}
   updateMessage() {}
   deleteMessage() {}
