@@ -2,8 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { DatabaseService } from 'src/database/database.service';
 import { Logger } from 'winston';
-import { AddNewMessageDto } from '../common/validation/schemas/message.schema';
+
 import { createLoggerMeta } from '../utils/logger/logger.util';
+import { CreateMessageRequestDto } from './dto/request/create-message-request.dto';
+import { CreateMessageResponseDto } from './dto/response/create-message-response.dto';
+import { FindMessageResponseDto } from './dto/response/find-message-response.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MessageService {
@@ -12,12 +16,17 @@ export class MessageService {
     private databaseService: DatabaseService,
   ) {}
 
-  async addNewMessage(userId: number, data: AddNewMessageDto) {
+  async createNewMessage(
+    userId: number,
+    data: CreateMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<CreateMessageResponseDto> {
+    const db = tx || this.databaseService;
     this.logger.info(
-      'AddNewMessage called',
+      'createMessage called',
       createLoggerMeta('message', MessageService.name),
     );
-    await this.databaseService.message.create({
+    const message = await db.message.create({
       data: {
         content: data.content,
         relationId: data.relationId,
@@ -38,9 +47,11 @@ export class MessageService {
         updatedAt: true,
       },
     });
+
+    return message;
   }
-  getMessages() {}
-  getMesssage() {}
+  // findMessage(): Promise<FindMessageResponseDto> {}
+  findMessages() {}
   updateMessage() {}
   deleteMessage() {}
 }
