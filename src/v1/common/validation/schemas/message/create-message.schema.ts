@@ -1,14 +1,14 @@
-import { z } from 'zod';
+import z from 'zod';
 import {
-  ownerIdSchema,
-  contentSchema,
-  relationIdSchema,
-  isReadSchema,
+  messageOwnerIdSchema,
+  messageContentSchema,
+  messageRelationIdSchema,
+  messageIsReadSchema,
 } from './message.schema';
 
 export const createMessageSchema = z.object({
-  ownerId: ownerIdSchema,
-  content: contentSchema,
-  relationId: relationIdSchema,
-  isRead: isReadSchema,
+  ownerId: messageOwnerIdSchema,
+  content: messageContentSchema,
+  relationId: messageRelationIdSchema,
+  isRead: messageIsReadSchema,
 });
