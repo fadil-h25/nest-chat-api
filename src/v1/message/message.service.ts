@@ -8,6 +8,7 @@ import { CreateMessageRequestDto } from './dto/request/create-message-request.dt
 import { CreateMessageResponseDto } from './dto/response/create-message-response.dto';
 import { FindMessageResponseDto } from './dto/response/find-message-response.dto';
 import { Prisma } from '@prisma/client';
+import { FindMessageRequestDto } from './dto/request/find-message-request.dto';
 
 @Injectable()
 export class MessageService {
@@ -49,7 +50,32 @@ export class MessageService {
 
     return message;
   }
-  findMessage(): Promise<FindMessageResponseDto> {}
+
+  async findMessage(
+    data: FindMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<FindMessageResponseDto> {
+    const db = tx || this.databaseService;
+
+    const updatedMessaged = await db.message.findUniqueOrThrow({
+      where: {
+        id: data.id,
+        ownerId: data.ownerId,
+      },
+
+      select: {
+        id: true,
+        ownerId: true,
+        content: true,
+        isRead: true,
+        createdAt: true,
+        relationId: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedMessaged;
+  }
   findMessages() {}
   updateMessage() {}
   deleteMessage() {}
