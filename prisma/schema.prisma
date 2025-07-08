@@ -80,14 +80,14 @@ model Message {
   id        Int      @id @default(autoincrement())
   ownerId   Int      @map("owner_id")
   content   String   @db.LongText
-  relationId Int?     @map("relation_id")
+  relationId Int     @map("relation_id")
   isRead    Boolean?  @default(false)      @map("is_read")
 
   createdAt DateTime @db.Timestamp(0) @default(now()) @map("create_at")
   updatedAt DateTime @db.Timestamp(0) @updatedAt    @map("update_at")
 
   owner    User     @relation(fields: [ownerId], references: [id])
-  relation Relation? @relation(name: "RelationOfMessage", fields: [relationId], references: [id])
+  relation Relation @relation(name: "RelationOfMessage", fields: [relationId], references: [id])
   relations Relation[] @relation("lastMessage")
 
   
