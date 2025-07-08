@@ -1,4 +1,4 @@
-export type FindMessageResponseDto = {
+export type UpdateMessageResponseDto = {
   id: number;
   content: string;
   relationId: number;
