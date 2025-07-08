@@ -9,6 +9,10 @@ import { CreateMessageResponseDto } from './dto/response/create-message-response
 import { FindMessageResponseDto } from './dto/response/find-message-response.dto';
 import { Prisma } from '@prisma/client';
 import { FindMessageRequestDto } from './dto/request/find-message-request.dto';
+import { UpdateMessageRequestDto } from './dto/request/update-message-request.dto';
+import { UpdateMessageResponseDto } from './dto/response/update-message-response.dto';
+import { DeleteMessageRequestDto } from './dto/request/delete-message-request.dto';
+import { DeleteMessageResponseDto } from './dto/response/delete-message-response.dto';
 
 @Injectable()
 export class MessageService {
@@ -17,7 +21,7 @@ export class MessageService {
     private databaseService: DatabaseService,
   ) {}
 
-  async createNewMessage(
+  async createMessage(
     data: CreateMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<CreateMessageResponseDto> {
@@ -57,7 +61,7 @@ export class MessageService {
   ): Promise<FindMessageResponseDto> {
     const db = tx || this.databaseService;
 
-    const updatedMessaged = await db.message.findUniqueOrThrow({
+    const message = await db.message.findUniqueOrThrow({
       where: {
         id: data.id,
         ownerId: data.ownerId,
@@ -74,9 +78,80 @@ export class MessageService {
       },
     });
 
-    return updatedMessaged;
+    return message;
   }
-  findMessages() {}
-  updateMessage() {}
-  deleteMessage() {}
+
+  async findMessages(
+    data: FindMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<FindMessageResponseDto[]> {
+    const db = tx || this.databaseService;
+
+    const messages = await db.message.findMany({
+      where: {
+        id: data.id,
+        ownerId: data.ownerId,
+      },
+
+      select: {
+        id: true,
+        ownerId: true,
+        content: true,
+        isRead: true,
+        createdAt: true,
+        relationId: true,
+        updatedAt: true,
+      },
+    });
+
+    return messages;
+  }
+  async updateMessage(
+    data: UpdateMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<UpdateMessageResponseDto> {
+    const db = tx || this.databaseService;
+
+    const updatedMessage = await db.message.update({
+      where: {
+        id: data.id,
+        ownerId: data.ownerId,
+      },
+
+      data: {
+        content: data.content,
+      },
+
+      select: {
+        id: true,
+        ownerId: true,
+        content: true,
+        isRead: true,
+        createdAt: true,
+        relationId: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedMessage;
+  }
+  async deleteMessage(
+    data: DeleteMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ): Promise<DeleteMessageResponseDto> {
+    const db = tx || this.databaseService;
+
+    const deletedMessage = await db.message.delete({
+      where: {
+        id: data.id,
+        ownerId: data.ownerId,
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+    return deletedMessage;
+  }
 }
