@@ -5,4 +5,5 @@ export type FindMessageResponseDto = {
   ownerId: number;
   createdAt: Date;
   updatedAt: Date;
+  isRead: boolean;
 };
