@@ -97,7 +97,6 @@ export class MessageService {
 
     const messages = await db.message.findMany({
       where: {
-        id: data.id,
         ownerId: data.ownerId,
       },
 
