@@ -16,6 +16,7 @@ import { validateWith } from '../common/validation/validate-with.validation';
 import { createMessageSchema } from '../common/validation/schemas/message/create-message.schema';
 import { createWsCustomResponse } from '../utils/ws/create-ws-custom-response.util';
 import { CreateMessageRequestDto } from '../message/dto/request/create-message-request.dto';
+import { getRoomName } from '../utils/ws/get-room-name.util';
 
 @UseFilters(WsCustomFilter)
 @WebSocketGateway()
@@ -53,7 +54,9 @@ export class MessageWsGateway {
     const eventName = MessageWsEvent.CREATED_MESSAGE;
 
     try {
-      this.server.to('relation:' + data.relationId).emit(eventName, data);
+      this.server
+        .to(getRoomName('relation', data.relationId))
+        .emit(eventName, data);
     } catch (error) {
       throw new WsCustomException(
         eventName,
