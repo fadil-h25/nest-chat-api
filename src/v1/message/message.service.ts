@@ -27,7 +27,7 @@ export class MessageService {
   ): Promise<CreateMessageResponseDto> {
     const db = tx || this.databaseService;
     this.logger.info(
-      'createMessage called',
+      'createMessage method called',
       createLoggerMeta('message', MessageService.name),
     );
     const message = await db.message.create({
@@ -59,6 +59,10 @@ export class MessageService {
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<FindMessageResponseDto> {
+    this.logger.info(
+      'findMessage method called',
+      createLoggerMeta('message', MessageService.name),
+    );
     const db = tx || this.databaseService;
 
     const message = await db.message.findUniqueOrThrow({
@@ -85,6 +89,10 @@ export class MessageService {
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<FindMessageResponseDto[]> {
+    this.logger.info(
+      'findMessages method called',
+      createLoggerMeta('message', MessageService.name),
+    );
     const db = tx || this.databaseService;
 
     const messages = await db.message.findMany({
@@ -110,6 +118,10 @@ export class MessageService {
     data: UpdateMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<UpdateMessageResponseDto> {
+    this.logger.info(
+      'updateMessage method called',
+      createLoggerMeta('message', MessageService.name),
+    );
     const db = tx || this.databaseService;
 
     const updatedMessage = await db.message.update({
@@ -139,6 +151,10 @@ export class MessageService {
     data: DeleteMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<DeleteMessageResponseDto> {
+    this.logger.info(
+      'deleteMessage method called',
+      createLoggerMeta('message', MessageService.name),
+    );
     const db = tx || this.databaseService;
 
     const deletedMessage = await db.message.delete({
