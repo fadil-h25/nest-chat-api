@@ -2,6 +2,7 @@ import { UseFilters } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -23,6 +24,7 @@ export class MessageWsGateway {
   server: Server;
   constructor(private messageService: MessageService) {}
 
+  @SubscribeMessage(MessageWsEvent.CREATE_MESSAGE)
   async listenCreateMessage(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
@@ -31,13 +33,13 @@ export class MessageWsGateway {
     const userId = getUserIdWs(client);
 
     try {
-      const createdContact = await this.messageService.createMessage(
+      const createdMessage = await this.messageService.createMessage(
         validateWith(createMessageSchema, { ...data, ownerId: userId }),
       );
 
-      this.sendCreatedContact(createdContact, client);
+      this.sendCreatedMessage(createdMessage);
 
-      return createWsCustomResponse(eventName, createdContact, 200);
+      return createWsCustomResponse(eventName, createdMessage, 200);
     } catch (error) {
       throw new WsCustomException(
         eventName,
@@ -47,11 +49,11 @@ export class MessageWsGateway {
     }
   }
 
-  sendCreatedContact(data: CreateMessageRequestDto, client: Socket) {
+  sendCreatedMessage(data: CreateMessageRequestDto) {
     const eventName = MessageWsEvent.CREATED_MESSAGE;
 
     try {
-      this.server.to('user:' + getUserIdWs(client)).emit(eventName, data);
+      this.server.to('relation:' + data.relationId).emit(eventName, data);
     } catch (error) {
       throw new WsCustomException(
         eventName,
