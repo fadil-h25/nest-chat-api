@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { validationUserName, validationUserPhone } from './user.schema';
-import { validationRelationIdNullable } from './relation/relation.schema';
+import { relationIdSchemaNullable } from './relation/relation.schema';
 
 export const validationContactId = z.number().min(1, 'Contact id invalid');
 export const validationContactName = z
@@ -11,7 +11,7 @@ export const validationContactName = z
 export const AddNewContact = z.object({
   phone: validationUserPhone,
   name: validationUserName,
-  relationId: validationRelationIdNullable,
+  relationId: relationIdSchemaNullable,
 });
 
 export type AddNewContactReq = z.infer<typeof AddNewContact>;
