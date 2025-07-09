@@ -20,6 +20,8 @@ import { WinstonModule } from 'nest-winston';
 import { format, transports } from 'winston';
 import { ContactWsModule } from './v1/contact-ws/contact-ws.module';
 import { UserWsModule } from './v1/user-ws/user-ws.module';
+import { MessageModule } from './v1/message/message.module';
+import { MessageWsModule } from './v1/message-ws/message-ws.module';
 
 @Module({
   imports: [
@@ -53,6 +55,10 @@ import { UserWsModule } from './v1/user-ws/user-ws.module';
     ContactWsModule,
 
     UserWsModule,
+
+    MessageModule,
+
+    MessageWsModule,
   ],
   controllers: [AppController],
   providers: [

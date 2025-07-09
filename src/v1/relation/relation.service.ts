@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { Relation, RelationType, Prisma } from '@prisma/client';
-import { validationRelationType } from '../common/validation/schemas/relation.schema';
+import { validationRelationType } from '../common/validation/schemas/relation/relation.schema';
 
 @Injectable()
 export class RelationService {

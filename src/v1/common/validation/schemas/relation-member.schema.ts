@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { validationUserId } from './user.schema';
-import { validationRelationId } from './relation.schema';
+import { relationIdSchema } from './relation/relation.schema';
 
 export const AddNewRelationMemberSchema = z.object({
   userId: validationUserId,
-  relationId: validationRelationId,
+  relationId: relationIdSchema,
 });
 
 export type AddNewRelationMemberDto = z.infer<
