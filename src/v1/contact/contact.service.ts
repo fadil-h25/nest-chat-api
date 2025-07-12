@@ -19,6 +19,7 @@ import {
 import { UserService } from '../user/user.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
+import { FindContactResponseDto } from './dto/response/find-contact-response.dto';
 
 @Injectable()
 export class ContactService {
@@ -28,6 +29,23 @@ export class ContactService {
     private eventEmit: EventEmitter2,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
+
+  //news
+  // async findContactsByRelationId(
+  //   relationId: number,
+  //   tx?: Prisma.TransactionClient,
+  // ): Promise<FindContactResponseDto> {
+  //   const db = tx || this.databaseService;
+
+  //   const contacts = await db.contact.findMany({
+  //     where: {
+  //       relationId,
+  //     },
+  //     select:{}
+  //   });
+
+  //   return contacts;
+  // }
 
   async getContacts(ownerId: number): Promise<GetContactRes[] | []> {
     this.logger.debug(
