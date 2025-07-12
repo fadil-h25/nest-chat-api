@@ -78,7 +78,7 @@ export class ContactWsGateway {
 
     return {
       ...createWsCustomResponse(
-        ContactWsEvent.CREATED_CONTACT,
+        ContactWsEvent.CREATE_CONTACT,
         createdContact,
         200,
       ),
@@ -93,11 +93,11 @@ export class ContactWsGateway {
       'sendNewContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
     );
-    const eventName = ContactWsEvent.CREATED_CONTACT;
+    const eventName = ContactWsEvent.CONTACT_CREATED;
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
         ...createWsCustomResponse(
-          ContactWsEvent.UPDATED_CONTACT,
+          ContactWsEvent.CONTACT_CREATED,
           createdContact,
           200,
         ),
@@ -143,7 +143,7 @@ export class ContactWsGateway {
     @ConnectedSocket() client: Socket,
     updatedContact: UpdateContactRes,
   ) {
-    const eventName = ContactWsEvent.UPDATED_CONTACT;
+    const eventName = ContactWsEvent.CONTACT_UPDATED;
     this.logger.debug(
       'sendUpdatedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
@@ -152,7 +152,7 @@ export class ContactWsGateway {
     try {
       this.server.to('user:' + getUserIdWs(client)).emit(eventName, {
         ...createWsCustomResponse(
-          ContactWsEvent.UPDATED_CONTACT,
+          ContactWsEvent.CONTACT_UPDATED,
           updatedContact,
           200,
         ),
@@ -193,7 +193,7 @@ export class ContactWsGateway {
   }
 
   sendDeletedContact(@ConnectedSocket() client: Socket, contactId: number) {
-    const eventName = ContactWsEvent.DELETED_CONTACT;
+    const eventName = ContactWsEvent.CONTACT_DELETED;
     this.logger.debug(
       'sendDeletedContact called ',
       createLoggerMeta('contact-ws', ContactWsGateway.name),
