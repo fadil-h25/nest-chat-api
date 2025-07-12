@@ -13,27 +13,82 @@ import { UpdateMessageRequestDto } from './dto/request/update-message-request.dt
 import { UpdateMessageResponseDto } from './dto/response/update-message-response.dto';
 import { DeleteMessageRequestDto } from './dto/request/delete-message-request.dto';
 import { DeleteMessageResponseDto } from './dto/response/delete-message-response.dto';
+import { RelationService } from '../relation/relation.service';
+import { RelationMemberService } from '../relation_member/relation_member.service';
 
 @Injectable()
 export class MessageService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private databaseService: DatabaseService,
+    private relationService: RelationService,
+    private relationMemberService: RelationMemberService,
   ) {}
 
   async createMessage(
     data: CreateMessageRequestDto,
-    tx?: Prisma.TransactionClient,
   ): Promise<CreateMessageResponseDto> {
-    const db = tx || this.databaseService;
+    const db = this.databaseService;
     this.logger.info(
       'createMessage method called',
       createLoggerMeta('message', MessageService.name),
     );
+
+    if (data.relationId == null) {
+      const message = await this.databaseService.$transaction(async (tx) => {
+        return this.createFirstMessage(data, tx);
+      });
+      return message;
+    } else {
+      const message = await db.message.create({
+        data: {
+          content: data.content,
+          relationId: data.relationId,
+          ownerId: data.ownerId,
+        },
+        select: {
+          id: true,
+          content: true,
+          relationId: true,
+          ownerId: true,
+          owner: {
+            select: {
+              name: true,
+            },
+          },
+
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      return message;
+    }
+  }
+
+  async createFirstMessage(
+    data: CreateMessageRequestDto,
+    tx?: Prisma.TransactionClient,
+  ) {
+    this.logger.debug(
+      'createFirstMessage() called',
+      createLoggerMeta('message', MessageService.name),
+    );
+    const db = tx ?? this.databaseService;
+
+    const relation = await this.relationService.createRelation(
+      data.relationType,
+    );
+
+    await this.relationMemberService.createRelationMembers([
+      { relationId: relation.id, userId: data.ownerId },
+      { relationId: relation.id, userId: data.targetId },
+    ]);
+
     const message = await db.message.create({
       data: {
         content: data.content,
-        relationId: data.relationId,
+        relationId: relation.id,
         ownerId: data.ownerId,
       },
       select: {
@@ -164,6 +219,7 @@ export class MessageService {
 
       select: {
         id: true,
+        relationId: true,
       },
     });
 
