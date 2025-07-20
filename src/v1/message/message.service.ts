@@ -5,16 +5,18 @@ import { Logger } from 'winston';
 
 import { createLoggerMeta } from '../utils/logger/logger.util';
 import { CreateMessageRequestDto } from './dto/request/create-message-request.dto';
-import { CreateMessageResponseDto } from './dto/response/create-message-response.dto';
-import { FindMessageResponseDto } from './dto/response/find-message-response.dto';
+
 import { Prisma } from '@prisma/client';
 import { FindMessageRequestDto } from './dto/request/find-message-request.dto';
 import { UpdateMessageRequestDto } from './dto/request/update-message-request.dto';
-import { UpdateMessageResponseDto } from './dto/response/update-message-response.dto';
+
 import { DeleteMessageRequestDto } from './dto/request/delete-message-request.dto';
-import { DeleteMessageResponseDto } from './dto/response/delete-message-response.dto';
+
 import { RelationService } from '../relation/relation.service';
 import { RelationMemberService } from '../relation_member/relation_member.service';
+import { messageSelect } from './helpers/message-select.helper';
+import { MessageResponseDto } from './dto/response/message-response.dto';
+import { DeletedMessageResponseDto } from './dto/response/deleted-message-response.dto';
 
 @Injectable()
 export class MessageService {
@@ -27,7 +29,7 @@ export class MessageService {
 
   async createMessage(
     data: CreateMessageRequestDto,
-  ): Promise<CreateMessageResponseDto> {
+  ): Promise<MessageResponseDto> {
     const db = this.databaseService;
     this.logger.info(
       'createMessage method called',
@@ -113,7 +115,7 @@ export class MessageService {
   async findMessage(
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<FindMessageResponseDto> {
+  ): Promise<MessageResponseDto> {
     this.logger.info(
       'findMessage method called',
       createLoggerMeta('message', MessageService.name),
@@ -126,15 +128,7 @@ export class MessageService {
         ownerId: data.ownerId,
       },
 
-      select: {
-        id: true,
-        ownerId: true,
-        content: true,
-        isRead: true,
-        createdAt: true,
-        relationId: true,
-        updatedAt: true,
-      },
+      select: messageSelect,
     });
 
     return message;
@@ -143,7 +137,7 @@ export class MessageService {
   async findMessages(
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<FindMessageResponseDto[]> {
+  ): Promise<MessageResponseDto[]> {
     this.logger.info(
       'findMessages method called',
       createLoggerMeta('message', MessageService.name),
@@ -155,23 +149,16 @@ export class MessageService {
         ownerId: data.ownerId,
       },
 
-      select: {
-        id: true,
-        ownerId: true,
-        content: true,
-        isRead: true,
-        createdAt: true,
-        relationId: true,
-        updatedAt: true,
-      },
+      select: messageSelect,
     });
 
     return messages;
   }
+
   async updateMessage(
     data: UpdateMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<UpdateMessageResponseDto> {
+  ): Promise<MessageResponseDto> {
     this.logger.info(
       'updateMessage method called',
       createLoggerMeta('message', MessageService.name),
@@ -188,15 +175,7 @@ export class MessageService {
         content: data.content,
       },
 
-      select: {
-        id: true,
-        ownerId: true,
-        content: true,
-        isRead: true,
-        createdAt: true,
-        relationId: true,
-        updatedAt: true,
-      },
+      select: messageSelect,
     });
 
     return updatedMessage;
@@ -204,7 +183,7 @@ export class MessageService {
   async deleteMessage(
     data: DeleteMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<DeleteMessageResponseDto> {
+  ): Promise<DeletedMessageResponseDto> {
     this.logger.info(
       'deleteMessage method called',
       createLoggerMeta('message', MessageService.name),
@@ -224,5 +203,17 @@ export class MessageService {
     });
 
     return deletedMessage;
+  }
+
+  async countTotalUnreadMessage(ownerId: number, relationId: number) {
+    const total = await this.databaseService.message.count({
+      where: {
+        ownerId,
+        relationId,
+        isRead: false,
+      },
+    });
+
+    return total;
   }
 }
