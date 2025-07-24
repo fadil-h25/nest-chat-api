@@ -1,7 +1,7 @@
 import { RelationType } from '@prisma/client';
 
+//for public and internal
 export type RelationMemberResponse = {
-  ownerId: number;
   totalUnreadMessage: number;
   user: {
     id: number;
@@ -18,3 +18,11 @@ export type RelationMemberResponse = {
     } | null;
   };
 };
+
+//only for internal
+export type GroupRelationMemberByUserAndTargetResponse = {
+  relationId: number;
+  _count: {
+    relationId: number;
+  };
+}[];
