@@ -1,15 +1,12 @@
+import { messageSelect } from 'src/v1/message/helpers/message-select.helper';
+
 export const relationMemberSelect = {
   relation: {
     select: {
       id: true,
       type: true,
       lastMessage: {
-        select: {
-          id: true,
-          content: true,
-          updatedAt: true,
-          createdAt: true,
-        },
+        select: messageSelect,
       },
     },
   },
