@@ -22,14 +22,11 @@ import { Status } from '../common/enum/status.enum';
     origin: 'http://localhost:3000',
   },
 })
-export class UserWsGateway implements OnGatewayInit {
+export class UserWsGateway {
   constructor() {}
   @WebSocketServer()
   server: Server;
 
-  afterInit() {
-    SocketServerHolder.setServer(this.server);
-  }
   @SubscribeMessage('room:join')
   async joinPrivateRoom(
     @ConnectedSocket() client: Socket,
