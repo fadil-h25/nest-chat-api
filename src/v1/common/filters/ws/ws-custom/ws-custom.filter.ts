@@ -14,14 +14,17 @@ import { SocketServerHolder } from 'src/v1/common/socket/socket-server.holder';
 
 @Catch(WsCustomException)
 export class WsCustomFilter implements ExceptionFilter {
-  constructor(@Inject(WINSTON_MODULE_PROVIDER) private logger: Logger) {}
+  constructor(
+    @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
+    private socketServerHolder: SocketServerHolder,
+  ) {}
   catch(exception: WsCustomException, host: ArgumentsHost) {
     this.logger.debug(
       'WsCustomFilter called',
       createLoggerMeta('common', WsCustomException.name),
     );
 
-    const server = SocketServerHolder.getServer();
+    const server = this.socketServerHolder.getServer();
     const ctx = host.switchToWs();
     const client: Socket = ctx.getClient<Socket>();
 

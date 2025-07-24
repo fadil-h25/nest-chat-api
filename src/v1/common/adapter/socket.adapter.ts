@@ -1,14 +1,16 @@
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { ServerOptions, Socket } from 'socket.io';
+import { Server, ServerOptions, Socket } from 'socket.io';
 import { INestApplicationContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { parse } from 'cookie';
 import { getUserIdWs } from 'src/v1/utils/auth/get-user-id.util';
+import { SocketServerHolder } from '../socket/socket-server.holder';
 
 export class AuthenticatedSocketAdapter extends IoAdapter {
   constructor(
     private app: INestApplicationContext,
     private jwtService: JwtService,
+    private socketServerHolder: SocketServerHolder,
   ) {
     super(app);
   }
@@ -16,13 +18,14 @@ export class AuthenticatedSocketAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
     console.log('createIoServer called');
 
-    const server = super.createIOServer(port, {
+    const server: Server = super.createIOServer(port, {
       ...options,
       cors: {
         origin: 'http://localhost:3000',
         credentials: true,
       },
-    });
+    }) as Server;
+    this.socketServerHolder.setServer(server);
 
     const jwtService = this.app.get(JwtService);
 
