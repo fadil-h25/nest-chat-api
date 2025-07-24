@@ -1,24 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, RelationType } from '@prisma/client';
 
-import { CreateRelationMembersRequestDto } from './dto/request/create-relation-members-request.dto';
-import { FindRelationMembersRequestDto } from './dto/request/find-relation-members-request.dto';
 import { MessageService } from '../message/message.service';
 
-import { RelationMemberResponse } from './dto/response/relation-member-response.dto';
+import {
+  GroupRelationMemberByUserAndTargetResponse,
+  RelationMemberResponse,
+} from './dto/response/relation-member-response.dto';
+import { SocketServerHolder } from '../common/socket/socket-server.holder';
+import {
+  CreateRelationMembersRequestDto,
+  FindRelationMemberByUserAndTargetRequestDto,
+} from './dto/request/relation-member-http-request.dto';
+import { Context } from '../common/types/context,type';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { createLoggerMeta } from '../utils/logger/logger.util';
+import { relationMemberSelect } from './helper/relation-member-select.helper';
 
 @Injectable()
 export class RelationMemberService {
   constructor(
     private databaseService: DatabaseService,
+    @Inject(forwardRef(() => MessageService))
     private messageService: MessageService,
+    private socketServerHolder: SocketServerHolder,
+    @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
 
   async createRelationMembers(
     data: CreateRelationMembersRequestDto[],
     tx?: Prisma.TransactionClient,
   ) {
+    this.logger.debug(
+      'createRelationMembers method called',
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
     const db = tx ?? this.databaseService;
 
     await db.relationMember.createMany({
@@ -26,56 +43,125 @@ export class RelationMemberService {
     });
   }
 
+  async createRelationMember(
+    ctx: Context,
+    data: CreateRelationMembersRequestDto,
+    tx?: Prisma.TransactionClient,
+  ) {
+    this.logger.debug(
+      'createRelationMember method called',
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
+    const db = tx ?? this.databaseService;
+
+    await db.relationMember.create({
+      data,
+
+      select: {
+        relation: {
+          select: {
+            id: true,
+            type: true,
+            lastMessage: {
+              select: {
+                id: true,
+                content: true,
+                updatedAt: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            phone: true,
+          },
+        },
+      },
+    });
+  }
+
   async findRelationMembers(
-    data: FindRelationMembersRequestDto,
+    ctx: Context,
+    userId: number,
   ): Promise<RelationMemberResponse[]> {
     const relationMembersData =
       await this.databaseService.relationMember.findMany({
         where: {
-          relationId: data.relationId, //mengambil lawan bicara ketika
           NOT: {
-            userId: data.userId,
+            userId,
           },
         },
-        select: {
-          relation: {
-            select: {
-              id: true,
-              type: true,
-              lastMessage: {
-                select: {
-                  id: true,
-                  content: true,
-                  updatedAt: true,
-                  createdAt: true,
-                },
-              },
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              phone: true,
-            },
-          },
-        },
+
+        select: relationMemberSelect,
       });
     const relationMembersDataWithUnreadCounts = await Promise.all(
       relationMembersData.map(async (dataRelation) => {
         const totalUnreadMessage =
           await this.messageService.countTotalUnreadMessage(
-            data.userId,
-            data.relationId,
+            dataRelation.user.id, // ambil dari lawan bicara
+            dataRelation.relation.id,
           );
 
         return {
           ...dataRelation,
           totalUnreadMessage,
-          ownerId: data.userId,
         };
       }),
     );
 
     return relationMembersDataWithUnreadCounts;
+  }
+
+  async findRelationMember(id: number): Promise<RelationMemberResponse> {
+    this.logger.debug(
+      'findRelationMember method called',
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
+    const relationMemberData =
+      await this.databaseService.relationMember.findFirstOrThrow({
+        where: {
+          id,
+        },
+        select: relationMemberSelect,
+      });
+
+    const countTotalUnreadMessage =
+      await this.messageService.countTotalUnreadMessage(
+        relationMemberData.user.id,
+        relationMemberData.relation.id,
+      );
+    return {
+      ...relationMemberData,
+      totalUnreadMessage: countTotalUnreadMessage,
+    };
+  }
+  async groupRelationMemberByUserAndTarget(
+    ctx: Context,
+    targetId: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<GroupRelationMemberByUserAndTargetResponse> {
+    this.logger.debug(
+      'findRelationMemberByUserAndTarget method called',
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
+    const db = tx ?? this.databaseService;
+
+    const result = await db.relationMember.groupBy({
+      by: ['relationId'],
+      where: {
+        userId: { in: [ctx.userId, targetId] },
+        relation: { type: RelationType.PRIVATE },
+      },
+      _count: { relationId: true },
+      having: {
+        relationId: {
+          _count: { equals: 2 },
+        },
+      },
+    });
+
+    return result;
   }
 }
