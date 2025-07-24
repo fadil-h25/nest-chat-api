@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { DatabaseService } from 'src/database/database.service';
 import { Logger } from 'winston';
@@ -17,6 +17,7 @@ import { RelationMemberService } from '../relation_member/relation_member.servic
 import { messageSelect } from './helpers/message-select.helper';
 import { MessageResponseDto } from './dto/response/message-response.dto';
 import { DeletedMessageResponseDto } from './dto/response/deleted-message-response.dto';
+import { Context } from '../common/types/context,type';
 
 @Injectable()
 export class MessageService {
@@ -24,10 +25,12 @@ export class MessageService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private databaseService: DatabaseService,
     private relationService: RelationService,
+    @Inject(forwardRef(() => RelationMemberService))
     private relationMemberService: RelationMemberService,
   ) {}
 
   async createMessage(
+    ctx: Context,
     data: CreateMessageRequestDto,
   ): Promise<MessageResponseDto> {
     const db = this.databaseService;
@@ -36,83 +39,82 @@ export class MessageService {
       createLoggerMeta('message', MessageService.name),
     );
 
-    if (data.relationId == null) {
+    const relation =
+      await this.relationMemberService.groupRelationMemberByUserAndTarget(
+        ctx,
+        data.targetId,
+      );
+
+    // on hold
+    if (relation.length < 1) {
       const message = await this.databaseService.$transaction(async (tx) => {
-        return this.createFirstMessage(data, tx);
+        return this.createFirstMessage(ctx, data, tx);
       });
       return message;
     } else {
       const message = await db.message.create({
         data: {
           content: data.content,
-          relationId: data.relationId,
-          ownerId: data.ownerId,
+          relationId: relation[0].relationId,
+          ownerId: ctx.userId,
         },
-        select: {
-          id: true,
-          content: true,
-          relationId: true,
-          ownerId: true,
-          owner: {
-            select: {
-              name: true,
-            },
-          },
-
-          createdAt: true,
-          updatedAt: true,
-        },
+        select: messageSelect,
       });
 
       return message;
     }
   }
 
-  async createFirstMessage(
+  private async createFirstMessage(
+    ctx: Context,
     data: CreateMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ) {
     this.logger.debug(
-      'createFirstMessage() called',
+      'createFirstMessage method called',
       createLoggerMeta('message', MessageService.name),
     );
     const db = tx ?? this.databaseService;
 
     const relation = await this.relationService.createRelation(
       data.relationType,
+      tx,
     );
 
-    await this.relationMemberService.createRelationMembers([
-      { relationId: relation.id, userId: data.ownerId },
-      { relationId: relation.id, userId: data.targetId },
-    ]);
+    await this.relationMemberService.createRelationMembers(
+      [
+        { relationId: relation.id, userId: ctx.userId },
+        { relationId: relation.id, userId: data.targetId },
+      ],
+      tx,
+    );
 
     const message = await db.message.create({
       data: {
         content: data.content,
         relationId: relation.id,
-        ownerId: data.ownerId,
+        ownerId: ctx.userId,
       },
-      select: {
-        id: true,
-        content: true,
-        relationId: true,
-        ownerId: true,
-        owner: {
-          select: {
-            name: true,
-          },
-        },
-
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: messageSelect,
     });
+    this.logger.debug(
+      'message id: ' + message.id,
+      createLoggerMeta('message', MessageService.name),
+    );
+
+    await this.relationService.updateLastMessageId(
+      {
+        id: relation.id,
+        lastMessageId: message.id,
+      },
+      tx,
+    );
 
     return message;
   }
 
   async findMessage(
+    ctx: Context,
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<MessageResponseDto> {
@@ -125,7 +127,8 @@ export class MessageService {
     const message = await db.message.findUniqueOrThrow({
       where: {
         id: data.id,
-        ownerId: data.ownerId,
+        ownerId: ctx.userId,
+        relationId: data.relationId,
       },
 
       select: messageSelect,
@@ -135,6 +138,7 @@ export class MessageService {
   }
 
   async findMessages(
+    ctx: Context,
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<MessageResponseDto[]> {
@@ -146,7 +150,7 @@ export class MessageService {
 
     const messages = await db.message.findMany({
       where: {
-        ownerId: data.ownerId,
+        ownerId: ctx.userId,
       },
 
       select: messageSelect,
@@ -156,6 +160,7 @@ export class MessageService {
   }
 
   async updateMessage(
+    ctx: Context,
     data: UpdateMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<MessageResponseDto> {
@@ -168,7 +173,7 @@ export class MessageService {
     const updatedMessage = await db.message.update({
       where: {
         id: data.id,
-        ownerId: data.ownerId,
+        ownerId: ctx.userId,
       },
 
       data: {
@@ -181,6 +186,7 @@ export class MessageService {
     return updatedMessage;
   }
   async deleteMessage(
+    ctx: Context,
     data: DeleteMessageRequestDto,
     tx?: Prisma.TransactionClient,
   ): Promise<DeletedMessageResponseDto> {
