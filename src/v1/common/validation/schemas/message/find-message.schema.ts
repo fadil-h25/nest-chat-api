@@ -1,7 +1,8 @@
 import z from 'zod';
-import { messageOwnerIdSchema, messageIdSchema } from './message.schema';
+import { messageIdSchema } from './message.schema';
+import { relationIdSchema } from '../relation/relation.schema';
 
 export const findMessageSchema = z.object({
   id: messageIdSchema,
-  ownerId: messageOwnerIdSchema,
+  relationId: relationIdSchema,
 });
