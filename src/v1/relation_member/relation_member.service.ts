@@ -9,10 +9,7 @@ import {
   RelationMemberResponse,
 } from './dto/response/relation-member-response.dto';
 import { SocketServerHolder } from '../common/socket/socket-server.holder';
-import {
-  CreateRelationMembersRequestDto,
-  FindRelationMemberByUserAndTargetRequestDto,
-} from './dto/request/relation-member-http-request.dto';
+import { CreateRelationMembersRequestDto } from './dto/request/relation-member-http-request.dto';
 import { Context } from '../common/types/context,type';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
