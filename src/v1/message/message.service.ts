@@ -52,16 +52,26 @@ export class MessageService {
       });
       return message;
     } else {
-      const message = await db.message.create({
-        data: {
-          content: data.content,
-          relationId: relation[0].relationId,
-          ownerId: ctx.userId,
-        },
-        select: messageSelect,
-      });
+      return await db.$transaction(async (tx) => {
+        const message = await tx.message.create({
+          data: {
+            content: data.content,
+            relationId: relation[0].relationId,
+            ownerId: ctx.userId,
+          },
+          select: messageSelect,
+        });
 
-      return message;
+        await this.relationService.updateLastMessageId(
+          ctx,
+          {
+            id: relation[0].relationId,
+            lastMessageId: message.id,
+          },
+          tx,
+        );
+        return message;
+      });
     }
   }
 
@@ -103,6 +113,7 @@ export class MessageService {
     );
 
     await this.relationService.updateLastMessageId(
+      ctx,
       {
         id: relation.id,
         lastMessageId: message.id,
