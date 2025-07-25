@@ -4,6 +4,7 @@ import { Relation, RelationType, Prisma } from '@prisma/client';
 import { UpdateRelationRequest } from './dto/request/relation-http-request.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
+import { Context } from '../common/types/context,type';
 
 @Injectable()
 export class RelationService {
@@ -13,6 +14,7 @@ export class RelationService {
   ) {}
 
   async createRelation(
+    ctx: Context,
     relationType: RelationType,
     tx?: Prisma.TransactionClient,
   ): Promise<Relation> {
@@ -32,6 +34,7 @@ export class RelationService {
   }
 
   async updateLastMessageId(
+    ctx: Context,
     data: UpdateRelationRequest,
     tx?: Prisma.TransactionClient,
   ) {
