@@ -14,7 +14,6 @@ import { WsCustomException } from '../common/exceptions/ws-custom.exception';
 import { MessageService } from './message.service';
 import { validateWith } from '../common/validation/validate-with.validation';
 import { createMessageSchema } from '../common/validation/schemas/message/create-message.schema';
-import { createWsCustomResponse } from '../utils/ws/create-ws-custom-response.util';
 
 import { generateRoomName } from '../utils/ws/generate-room-name.util';
 import { updateMessageSchema } from '../common/validation/schemas/message/update-message.schema';
