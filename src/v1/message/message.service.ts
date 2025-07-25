@@ -87,6 +87,7 @@ export class MessageService {
     const db = tx ?? this.databaseService;
 
     const relation = await this.relationService.createRelation(
+      ctx,
       data.relationType,
       tx,
     );
