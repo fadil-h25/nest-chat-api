@@ -25,6 +25,8 @@ import { Context } from '../common/types/context,type';
 import { SendUpdatedMessegaeRequest } from './dto/request/send-updated-message-request.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
+import { generateResponseAck } from '../common/utils/generate-ws-response';
+import { WsCustomResponseAck } from '../common/types/ws-custom-response.type';
 
 @UseFilters(WsCustomFilter)
 @WebSocketGateway()
@@ -40,7 +42,7 @@ export class MessageWsGateway {
   async listenCreateMessage(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
-  ) {
+  ): Promise<WsCustomResponseAck> {
     this.logger.debug(
       'listenCreateMessage method called',
       createLoggerMeta('message', MessageWsGateway.name),
@@ -56,7 +58,7 @@ export class MessageWsGateway {
 
       this.sendCreatedMessage(createdMessage);
 
-      return createWsCustomResponse(eventName, createdMessage, 200);
+      return generateResponseAck(eventName);
     } catch (error) {
       throw new WsCustomException(
         eventName,
@@ -110,7 +112,7 @@ export class MessageWsGateway {
         relationId: updatedMessage.relationId,
       });
 
-      return createWsCustomResponse(eventName, updatedMessage, 200);
+      return generateResponseAck(eventName);
     } catch (error) {
       throw new WsCustomException(
         eventName,
