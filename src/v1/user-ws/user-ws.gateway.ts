@@ -1,7 +1,6 @@
 import { Injectable, UseFilters } from '@nestjs/common';
 import {
   ConnectedSocket,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -11,8 +10,10 @@ import { WsCustomFilter } from '../common/filters/ws/ws-custom/ws-custom.filter'
 
 import { Server, Socket } from 'socket.io';
 import { getUserIdWs } from '../utils/auth/get-user-id.util';
-import { SocketServerHolder } from '../common/socket/socket-server.holder';
-import { Status } from '../common/enum/status.enum';
+
+import { UserWsEvent } from '../common/enum/user-event.enum';
+import { generateRoomName } from '../utils/ws/generate-room-name.util';
+import { WsCustomResponseAck } from '../common/response/ws-custom-response-ack.type';
 
 @UseFilters(WsCustomFilter)
 @Injectable()
@@ -27,20 +28,21 @@ export class UserWsGateway {
   @WebSocketServer()
   server: Server;
 
-  @SubscribeMessage('room:join')
+  @SubscribeMessage(UserWsEvent.USER_JOIN_ROOM)
   async joinPrivateRoom(
     @ConnectedSocket() client: Socket,
-  ): Promise<WsResponse> {
-    const eventName = 'room:join';
-    const room = 'user:' + String(getUserIdWs(client));
+  ): Promise<WsCustomResponseAck> {
+    const eventName = UserWsEvent.USER_JOIN_ROOM;
+    const room = generateRoomName(
+      UserWsEvent.USER_ROOM_PREFIX,
+      getUserIdWs(client),
+    );
     await client.join(room);
 
     return {
-      event: eventName,
-      data: {
-        status: Status.OK,
-        message: 'User join private room successful',
-      },
+      eventName,
+      message: 'User joined room successfully',
+      success: true,
     };
   }
 }
