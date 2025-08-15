@@ -1,5 +1,10 @@
-import { RoomScope } from 'src/v1/common/enum/room-scope.enum';
+import { RelationWsEvent } from 'src/v1/common/enum/relation-event';
 
-export function generateRoomName(scope: RoomScope, relationId: number): string {
+import { UserWsEvent } from 'src/v1/common/enum/user-event.enum';
+
+export function generateRoomName(
+  scope: UserWsEvent.USER_ROOM_PREFIX | RelationWsEvent.RELATION_ROOM_PREFIX,
+  relationId: number,
+): string {
   return `${scope}:${relationId}`;
 }
