@@ -14,6 +14,7 @@ import { Context } from '../common/types/context,type';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
 import { relationMemberSelect } from './helper/relation-member-select.helper';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class RelationMemberService {
@@ -21,6 +22,7 @@ export class RelationMemberService {
     private databaseService: DatabaseService,
     @Inject(forwardRef(() => MessageService))
     private messageService: MessageService,
+    private userService: UserService,
     private socketServerHolder: SocketServerHolder,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
@@ -145,19 +147,30 @@ export class RelationMemberService {
     );
     const db = tx ?? this.databaseService;
 
+    this.logger.debug(
+      `targetId: ${targetId}`,
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
+
+    const validTarget = await this.userService.getUserById(ctx, targetId);
+
     const result = await db.relationMember.groupBy({
       by: ['relationId'],
       where: {
-        userId: { in: [ctx.userId, targetId] },
+        userId: { in: [ctx.userId, validTarget.id] },
         relation: { type: RelationType.PRIVATE },
       },
-      _count: { relationId: true },
+      _count: { userId: true },
       having: {
-        relationId: {
-          _count: { equals: 2 },
-        },
+        userId: { _count: { equals: 2 } }, // berarti ada dua user berbeda
       },
     });
+
+    this.logger.debug(
+      `result: ${JSON.stringify(result)}`,
+
+      createLoggerMeta('relation-member', RelationMemberService.name),
+    );
 
     return result;
   }
