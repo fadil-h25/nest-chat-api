@@ -1,10 +1,11 @@
-import { Inject, Logger, UseFilters } from '@nestjs/common';
+import { Inject, Logger, UseFilters, UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsResponse,
 } from '@nestjs/websockets';
 import { WsCustomFilter } from '../common/filters/ws/ws-custom/ws-custom.filter';
 import { getUserIdWs } from '../utils/auth/get-user-id.util';
@@ -19,13 +20,14 @@ import { generateRoomName } from '../utils/ws/generate-room-name.util';
 import { updateMessageSchema } from '../common/validation/schemas/message/update-message.schema';
 
 import { RoomScope } from '../common/enum/room-scope.enum';
-import { MessageResponseDto } from './dto/response/message-response.dto';
+import { MessageResponse } from './dto/response/message-response.dto';
 import { Context } from '../common/types/context,type';
 import { SendUpdatedMessegaeRequest } from './dto/request/send-updated-message-request.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
-import { generateResponseAck } from '../common/utils/generate-ws-response';
-import { WsCustomResponseAck } from '../common/types/ws-custom-response.type';
+
+import { RelationWsEvent } from '../common/enum/relation-event';
+import { WsCustomResponseAck } from '../common/response/ws-custom-response-ack.type';
 
 @UseFilters(WsCustomFilter)
 @WebSocketGateway()
@@ -41,7 +43,7 @@ export class MessageWsGateway {
   async listenCreateMessage(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
-  ): Promise<WsCustomResponseAck> {
+  ): Promise<WsCustomResponseAck | WsCustomException> {
     this.logger.debug(
       'listenCreateMessage method called',
       createLoggerMeta('message', MessageWsGateway.name),
@@ -57,9 +59,13 @@ export class MessageWsGateway {
 
       this.sendCreatedMessage(createdMessage);
 
-      return generateResponseAck(eventName);
+      return {
+        eventName,
+        message: 'Message created successfully',
+        success: true,
+      };
     } catch (error) {
-      throw new WsCustomException(
+      return new WsCustomException(
         eventName,
         'Failed to create a message',
         error,
@@ -67,7 +73,7 @@ export class MessageWsGateway {
     }
   }
 
-  sendCreatedMessage(data: MessageResponseDto) {
+  sendCreatedMessage(data: MessageResponse) {
     this.logger.debug(
       'sendCreatedMessage method called',
       createLoggerMeta('message', MessageWsGateway.name),
@@ -76,7 +82,12 @@ export class MessageWsGateway {
 
     try {
       this.server
-        .to(generateRoomName(RoomScope.RELATION_ROOM_PREFIX, data.relationId))
+        .to(
+          generateRoomName(
+            RelationWsEvent.RELATION_ROOM_PREFIX,
+            data.relationId,
+          ),
+        )
         .emit(eventName, data);
     } catch (error) {
       throw new WsCustomException(
@@ -91,7 +102,7 @@ export class MessageWsGateway {
   async listenUpdateMessage(
     @MessageBody() data: any,
     @ConnectedSocket() client: Socket,
-  ) {
+  ): Promise<WsCustomResponseAck | WsCustomException> {
     this.logger.debug(
       'listenUpdateMessage method called',
       createLoggerMeta('message', MessageWsGateway.name),
@@ -111,7 +122,12 @@ export class MessageWsGateway {
         relationId: updatedMessage.relationId,
       });
 
-      return generateResponseAck(eventName);
+      return {
+        eventName,
+        message: 'Message updated successfully',
+        success: true,
+      };
+      // return createWsCustomResponse(eventName, updatedMessage, 200);
     } catch (error) {
       throw new WsCustomException(
         eventName,
@@ -135,7 +151,12 @@ export class MessageWsGateway {
       });
 
       this.server
-        .to(generateRoomName(RoomScope.RELATION_ROOM_PREFIX, data.relationId))
+        .to(
+          generateRoomName(
+            RelationWsEvent.RELATION_ROOM_PREFIX,
+            data.relationId,
+          ),
+        )
         .emit(eventName, message);
     } catch (error) {
       throw new WsCustomException(
