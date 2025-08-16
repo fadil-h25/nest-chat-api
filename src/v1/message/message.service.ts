@@ -15,9 +15,10 @@ import { DeleteMessageRequestDto } from './dto/request/delete-message-request.dt
 import { RelationService } from '../relation/relation.service';
 import { RelationMemberService } from '../relation_member/relation_member.service';
 import { messageSelect } from './helpers/message-select.helper';
-import { MessageResponseDto } from './dto/response/message-response.dto';
+
 import { DeletedMessageResponseDto } from './dto/response/deleted-message-response.dto';
 import { Context } from '../common/types/context,type';
+import { MessageResponse } from './dto/response/message-response.dto';
 
 @Injectable()
 export class MessageService {
@@ -32,7 +33,7 @@ export class MessageService {
   async createMessage(
     ctx: Context,
     data: CreateMessageRequestDto,
-  ): Promise<MessageResponseDto> {
+  ): Promise<MessageResponse> {
     const db = this.databaseService;
     this.logger.info(
       'createMessage method called',
@@ -129,7 +130,7 @@ export class MessageService {
     ctx: Context,
     data: FindMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<MessageResponseDto> {
+  ): Promise<MessageResponse> {
     this.logger.info(
       'findMessage method called',
       createLoggerMeta('message', MessageService.name),
@@ -151,9 +152,9 @@ export class MessageService {
 
   async findMessages(
     ctx: Context,
-    data: FindMessageRequestDto,
+    relationId: number,
     tx?: Prisma.TransactionClient,
-  ): Promise<MessageResponseDto[]> {
+  ): Promise<MessageResponse[]> {
     this.logger.info(
       'findMessages method called',
       createLoggerMeta('message', MessageService.name),
@@ -163,6 +164,7 @@ export class MessageService {
     const messages = await db.message.findMany({
       where: {
         ownerId: ctx.userId,
+        relationId,
       },
 
       select: messageSelect,
@@ -175,7 +177,7 @@ export class MessageService {
     ctx: Context,
     data: UpdateMessageRequestDto,
     tx?: Prisma.TransactionClient,
-  ): Promise<MessageResponseDto> {
+  ): Promise<MessageResponse> {
     this.logger.info(
       'updateMessage method called',
       createLoggerMeta('message', MessageService.name),

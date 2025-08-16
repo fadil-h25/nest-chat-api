@@ -5,9 +5,10 @@ import { ContactModule } from '../contact/contact.module';
 import { RelationModule } from '../relation/relation.module';
 import { RelationMemberModule } from '../relation_member/relation_member.module';
 import { MessageController } from './message.controller';
+import { MessageWsGateway } from './message-ws.gateway';
 
 @Module({
-  providers: [MessageService],
+  providers: [MessageService, MessageWsGateway],
   imports: [
     DatabaseModule,
     forwardRef(() => ContactModule),
