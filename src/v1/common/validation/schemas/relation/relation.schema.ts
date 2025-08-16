@@ -7,7 +7,7 @@ export const relationTypeSchema = z.enum([
   RelationType.GROUP,
 ]);
 
-export const relationIdSchema = z.number().min(1, 'relation id invalid');
+export const relationIdSchema = z.coerce.number().min(1, 'relation id invalid');
 
 export const relationIdSchemaNullable = z
   .number()
