@@ -5,6 +5,7 @@ import { UpdateRelationRequest } from './dto/request/relation-http-request.dto';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { createLoggerMeta } from '../utils/logger/logger.util';
 import { Context } from '../common/types/context,type';
+import { ErrorCustom } from '../common/errors/error-custom.type';
 
 @Injectable()
 export class RelationService {
@@ -12,6 +13,20 @@ export class RelationService {
     private readonly databaseService: DatabaseService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
   ) {}
+
+  async findUserRelation(ctx: Context, relationId: number): Promise<void> {
+    const relation = await this.databaseService.relation.findFirst({
+      where: {
+        id: relationId,
+        relationMember: {
+          some: {
+            userId: ctx.userId,
+          },
+        },
+      },
+    });
+    if (!relation) throw new ErrorCustom(403, 'relationId', 'access denied');
+  }
 
   async createRelation(
     ctx: Context,
