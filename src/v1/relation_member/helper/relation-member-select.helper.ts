@@ -1,20 +1,27 @@
-import { messageSelect } from 'src/v1/message/helpers/message-select.helper';
-
 export const relationMemberSelect = {
   id: true,
+  user: {
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+    },
+  },
   relation: {
     select: {
       id: true,
       type: true,
       lastMessage: {
-        select: messageSelect,
+        select: {
+          id: true,
+          content: true,
+          ownerId: true,
+          createdAt: true,
+          updatedAt: true,
+          relationId: true,
+          isRead: true,
+        },
       },
-    },
-  },
-  user: {
-    select: {
-      id: true,
-      phone: true,
     },
   },
 };
