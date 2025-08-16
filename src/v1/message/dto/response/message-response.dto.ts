@@ -1,12 +1,9 @@
-export type MessageResponseDto = {
+export type MessageResponse = {
   id: number;
   content: string;
   relationId: number;
   ownerId: number;
-  owner: {
-    name: string;
-  };
-
   createdAt: Date;
   updatedAt: Date;
+  isRead: boolean;
 };
